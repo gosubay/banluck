@@ -1,0 +1,433 @@
+<title>Banluck Strategy Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a jade card-table felt for play, paper panels for reading; one sticky header with tabs + rule switches. */
+:root {
+  --bg: #edf2ee;          /* pale jade paper */
+  --surface: #f8fbf8;
+  --ink: #13241d;
+  --muted: #55675e;
+  --line: #cbd8cf;
+  --felt: #1d5a45;        /* card-table felt */
+  --felt-deep: #17483a;
+  --felt-ink: #eef5ef;
+  --card: #fffdf7;        /* playing-card ivory */
+  --card-ink: #1b1b1b;
+  --cinnabar: #c2412d;    /* hit / red suits / losses */
+  --stand: #1a73a0;       /* stand */
+  --gold: #a8740a;        /* special hands */
+  --win: #1f7a4d;
+  --focus: #c2412d;
+  --hit-soft: #f6dcd5;
+  --stand-soft: #d5e8f2;
+  --font-display: "Young Serif", "Iowan Old Style", Georgia, serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1a15; --surface: #13241d; --ink: #e6eee8; --muted: #93a69c; --line: #28403494;
+    --felt: #154434; --felt-deep: #0f3328; --felt-ink: #e8f1ea; --card: #f4efe2; --card-ink: #161616;
+    --cinnabar: #e0634b; --stand: #3f92c8; --gold: #e2b24a; --win: #4cbf86; --focus: #e0634b;
+    --hit-soft: #3a211c; --stand-soft: #16303f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1a15; --surface: #13241d; --ink: #e6eee8; --muted: #93a69c; --line: #28403494;
+  --felt: #154434; --felt-deep: #0f3328; --felt-ink: #e8f1ea; --card: #f4efe2; --card-ink: #161616;
+  --cinnabar: #e0634b; --stand: #3f92c8; --gold: #e2b24a; --win: #4cbf86; --focus: #e0634b;
+  --hit-soft: #3a211c; --stand-soft: #16303f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; line-height: 1.2; margin: 0; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; }
+.num, td.n, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; }
+
+/* ---- Header ---- */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; padding-block: 12px 0; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.brand h1 { font-size: 1.45rem; }
+.brand .tag { color: var(--muted); font-size: .85rem; }
+.switches { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.switch { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-size: .8rem; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+@media (max-width: 700px) { .top { position: static; } }
+.tabs { display: flex; gap: 2px; width: 100%; overflow-x: auto; scrollbar-width: none; }
+.tabs button { border: 0; background: none; cursor: pointer; padding: 10px 14px 11px; font-size: .95rem; color: var(--muted); border-bottom: 3px solid transparent; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--cinnabar); font-weight: 600; }
+main .wrap { padding-block: 24px 64px; }
+.panel-intro { display: grid; gap: 6px; margin-bottom: 20px; max-width: 68ch; }
+.panel-intro p { color: var(--muted); }
+
+/* ---- Play ---- */
+.play-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .play-grid { grid-template-columns: 1fr; } }
+.felt { background: radial-gradient(120% 90% at 50% 0%, var(--felt) 0%, var(--felt-deep) 100%); color: var(--felt-ink); border-radius: 18px; padding: 20px; display: grid; gap: 18px; min-height: 420px; box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--felt-deep) 70%, black 30%); }
+.seat { display: grid; gap: 8px; }
+.seat-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.seat-head .who { font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; opacity: .8; }
+.seat-head .total { font-family: var(--font-mono); font-size: .9rem; }
+.hand { display: flex; flex-wrap: wrap; gap: 8px; min-height: 104px; align-items: center; }
+.card { width: 68px; height: 96px; border-radius: 8px; background: var(--card); color: var(--card-ink); position: relative; box-shadow: 0 2px 0 rgba(0,0,0,.25), 0 6px 14px rgba(0,0,0,.25); font-family: var(--font-display); flex: none; animation: drop .28s ease-out both; }
+.card .tl { position: absolute; top: 5px; left: 7px; font-size: 1.05rem; line-height: 1; text-align: center; }
+.card .tl small { display: block; font-size: .85rem; }
+.card .mid { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.9rem; }
+.card.red { color: #b3261e; }
+.card.back { background: repeating-linear-gradient(45deg, #9e2f20 0 6px, #b8402c 6px 12px); box-shadow: inset 0 0 0 4px var(--card), 0 2px 0 rgba(0,0,0,.25), 0 6px 14px rgba(0,0,0,.25); }
+@keyframes drop { from { transform: translateY(-10px); opacity: .2; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+.table-msg { min-height: 2.8em; font-size: 1.02rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.badge { font-family: var(--font-mono); font-size: .85rem; padding: 2px 10px; border-radius: 999px; background: rgba(255,255,255,.14); }
+.badge.win { background: var(--win); color: #fff; }
+.badge.loss { background: var(--cinnabar); color: #fff; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { border: 1px solid transparent; border-radius: 999px; padding: 9px 20px; cursor: pointer; font-weight: 600; background: var(--surface); color: var(--ink); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.hit { background: var(--cinnabar); color: #fff; }
+.btn.stand { background: var(--stand); color: #fff; }
+.btn.ghost { background: transparent; border-color: var(--line); color: inherit; }
+.felt .btn.ghost { border-color: rgba(255,255,255,.35); }
+.btn.suggest { box-shadow: 0 0 0 3px var(--felt-ink); }
+
+.side { display: grid; gap: 16px; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.box h3 { font-size: 1.05rem; }
+.eyebrow { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.coach-rec { display: flex; align-items: center; gap: 12px; }
+.pill { display: inline-block; font-weight: 600; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; padding: 3px 10px; border-radius: 6px; }
+.pill.hit { background: var(--cinnabar); color: #fff; }
+.pill.stand { background: var(--stand); color: #fff; }
+.pill.forced { background: var(--line); color: var(--ink); }
+.pill.mix { background: var(--gold); color: #fff; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
+.stat .k { font-size: .75rem; color: var(--muted); }
+.stat .v { font-family: var(--font-mono); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.pos { color: var(--win); } .neg { color: var(--cinnabar); }
+.small { font-size: .85rem; color: var(--muted); }
+label.check { display: flex; gap: 8px; align-items: center; font-size: .9rem; cursor: pointer; }
+
+/* ---- Monte Carlo ---- */
+.mc { margin-top: 28px; display: grid; gap: 16px; }
+.mc-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .mc-grid { grid-template-columns: 1fr; } }
+.field { display: grid; gap: 4px; }
+.field label { font-size: .8rem; color: var(--muted); }
+.field select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); width: 100%; }
+.progress { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.progress > div { height: 100%; width: 0; background: var(--cinnabar); transition: width .2s; }
+.result-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.result-head .big { font-family: var(--font-mono); font-size: 2rem; font-variant-numeric: tabular-nums; }
+.chart-wrap { position: relative; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .78rem; padding: 4px 8px; border-radius: 6px; font-family: var(--font-mono); white-space: nowrap; transform: translate(-50%, -120%); }
+.scroll { overflow-x: auto; }
+table.data { border-collapse: collapse; width: 100%; font-size: .88rem; }
+table.data th, table.data td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+table.data th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+table.data td.n { text-align: right; white-space: nowrap; }
+table.data th.n { text-align: right; }
+
+/* ---- Strategy chart ---- */
+.summary { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 12px; display: grid; min-width: 0; }
+.chip .k { font-size: .74rem; color: var(--muted); }
+.chip .v { font-family: var(--font-mono); font-size: 1.05rem; }
+.chart-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .chart-layout { grid-template-columns: 1fr; } }
+table.strat { border-collapse: separate; border-spacing: 4px; width: 100%; min-width: 420px; }
+table.strat th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; padding: 4px; text-align: center; }
+table.strat th.rowh { text-align: left; text-transform: none; letter-spacing: 0; font-size: .92rem; color: var(--ink); font-weight: 500; white-space: nowrap; }
+table.strat th.rowh small { display: block; color: var(--muted); font-size: .76rem; font-weight: 400; }
+table.strat tr.group th { text-align: left; padding-top: 14px; font-size: .78rem; color: var(--ink); }
+.cell { border-radius: 6px; text-align: center; padding: 7px 4px; font-weight: 600; font-size: .9rem; line-height: 1.2; cursor: default; }
+.cell small { display: block; font-family: var(--font-mono); font-weight: 400; font-size: .72rem; opacity: .85; }
+.cell.H { background: var(--hit-soft); color: var(--ink); box-shadow: inset 4px 0 0 var(--cinnabar); }
+.cell.S { background: var(--stand-soft); color: var(--ink); box-shadow: inset 4px 0 0 var(--stand); }
+.cell.H.strong { background: var(--cinnabar); color: #fff; box-shadow: none; }
+.cell.S.strong { background: var(--stand); color: #fff; box-shadow: none; }
+.cell.na { background: transparent; color: var(--muted); font-weight: 400; border: 1px dashed var(--line); }
+.cell.forced { background: var(--line); color: var(--ink); font-weight: 500; }
+.cell.mixed { outline: 2px dashed var(--gold); outline-offset: -2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: .82rem; color: var(--muted); align-items: center; }
+.legend .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+.banker-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .banker-grid { grid-template-columns: 1fr; } }
+table.mini { border-collapse: separate; border-spacing: 3px; width: 100%; font-size: .8rem; }
+table.mini th { font-weight: 500; color: var(--muted); font-size: .72rem; padding: 2px; text-align: center; }
+table.mini th.rowh { text-align: left; color: var(--ink); white-space: nowrap; }
+table.mini .cell { padding: 4px 2px; font-size: .75rem; }
+
+/* ---- Prose (rules / why) ---- */
+.prose { display: grid; gap: 14px; max-width: 70ch; }
+.prose p, .prose li { line-height: 1.65; }
+.prose ul, .prose ol { margin: 0; padding-left: 1.25em; display: grid; gap: 6px; }
+.two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+.section { display: grid; gap: 14px; margin-bottom: 34px; }
+.compare td:first-child { font-weight: 600; white-space: nowrap; }
+.compare td.diff { background: color-mix(in srgb, var(--gold) 10%, transparent); }
+.ladder { display: grid; gap: 6px; }
+.rung { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 8px 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); }
+.rung .mult { font-family: var(--font-mono); font-size: 1.1rem; color: var(--gold); font-weight: 500; }
+.rung.loss .mult { color: var(--cinnabar); }
+.rule-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 10px; }
+.rule-card .rule { font-family: var(--font-display); font-size: 1.25rem; line-height: 1.3; }
+.rule-card .rule em { font-style: normal; color: var(--cinnabar); }
+.rule-card .rule strong { font-weight: 400; color: var(--stand); }
+.rule-list { display: grid; gap: 14px; counter-reset: rule; }
+.rule-card .idx { font-family: var(--font-mono); font-size: .75rem; color: var(--muted); }
+.callout { border-left: 3px solid var(--gold); padding: 4px 0 4px 14px; color: var(--ink); }
+.kbd { font-family: var(--font-mono); font-size: .85em; padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+[role="tabpanel"]:focus { outline: none; }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Banluck Strategy Lab</h1>
+      <span class="tag">Solved hit/stand strategy · single deck · you vs the banker</span>
+    </div>
+    <div class="switches">
+      <div class="switch" title="What a five-card bust costs you">5-card bust
+        <span class="seg" id="seg-variant">
+          <button type="button" data-v="bust1" aria-pressed="false">lose 1×</button>
+          <button type="button" data-v="bust2" aria-pressed="true">lose 2×</button>
+        </span>
+      </div>
+      <div class="switch" title="How the dealer plays">Dealer
+        <span class="seg" id="seg-dealer">
+          <button type="button" data-d="fixed" aria-pressed="true">fixed rule</button>
+          <button type="button" data-d="smart" aria-pressed="false">smart</button>
+        </span>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button type="button" role="tab" id="t-play" aria-controls="play" aria-selected="true">Play &amp; simulate</button>
+      <button type="button" role="tab" id="t-chart" aria-controls="chart" aria-selected="false">Strategy chart</button>
+      <button type="button" role="tab" id="t-rules" aria-controls="rules" aria-selected="false">Rules</button>
+      <button type="button" role="tab" id="t-why" aria-controls="why" aria-selected="false">Why it works</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ============================ PLAY ============================ -->
+<section id="play" role="tabpanel" aria-labelledby="t-play" tabindex="-1">
+  <div class="play-grid">
+    <div class="felt" aria-live="polite">
+      <div class="seat">
+        <div class="seat-head"><span class="who">Banker</span><span class="total" id="d-total">2 cards, face down</span></div>
+        <div class="hand" id="d-hand"></div>
+      </div>
+      <div class="table-msg" id="msg">Press Deal to start. The coach on the right tells you what the solver would do.</div>
+      <div class="seat">
+        <div class="seat-head"><span class="who">You</span><span class="total" id="p-total"></span></div>
+        <div class="hand" id="p-hand"></div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="b-deal" type="button">Deal</button>
+        <button class="btn hit" id="b-hit" type="button" disabled>Hit</button>
+        <button class="btn stand" id="b-stand" type="button" disabled>Stand</button>
+        <button class="btn ghost" id="b-reset" type="button">Reset stats</button>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="box" id="coach">
+        <div class="eyebrow">Coach</div>
+        <div class="coach-rec" id="coach-rec"><span class="pill forced">Waiting</span><span>Deal a hand.</span></div>
+        <p class="small" id="coach-why">Advice comes from the strategy chart for the rules and dealer selected at the top.</p>
+        <label class="check"><input type="checkbox" id="coach-on" checked> Show advice before I act</label>
+      </div>
+      <div class="box">
+        <div class="eyebrow">Your session</div>
+        <div class="stats">
+          <div class="stat"><div class="k">Hands</div><div class="v" id="s-hands">0</div></div>
+          <div class="stat"><div class="k">Net units</div><div class="v" id="s-net">0</div></div>
+          <div class="stat"><div class="k">Decisions matching chart</div><div class="v" id="s-acc">–</div></div>
+          <div class="stat"><div class="k">Expected cost of mistakes</div><div class="v" id="s-cost">0.00</div></div>
+        </div>
+        <p class="small" id="s-last">The cost is how many units your off-chart decisions give away on average, so luck doesn't hide them.</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="mc">
+    <div class="panel-intro">
+      <h2>Monte Carlo simulator</h2>
+      <p>Deal hundreds of thousands of real shuffled single-deck hands in your browser and watch the average settle onto the exact answer. Every hand starts from a fresh 52-card deck.</p>
+    </div>
+    <div class="mc-grid">
+      <div class="box">
+        <div class="field">
+          <label for="mc-strategy">Your strategy</label>
+          <select id="mc-strategy">
+            <option value="chartFixed">Chart for the fixed dealer</option>
+            <option value="chartSmart">Chart for the smart dealer</option>
+            <option value="standAtMin">Stand on 16+ (copy the dealer)</option>
+            <option value="casino17">Casino habit: hit 16, stand 17+</option>
+            <option value="charlieHunter">Charlie chaser: always hit 4 cards</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="mc-hands">Hands to deal</label>
+          <select id="mc-hands">
+            <option value="100000">100,000</option>
+            <option value="1000000" selected>1,000,000</option>
+            <option value="5000000">5,000,000</option>
+          </select>
+        </div>
+        <p class="small" id="mc-against">Against: fixed dealer · five-card bust loses 2×</p>
+        <div class="controls">
+          <button class="btn hit" id="mc-run" type="button">Run simulation</button>
+          <button class="btn ghost" id="mc-stop" type="button" disabled>Stop</button>
+        </div>
+        <div class="progress" aria-hidden="true"><div id="mc-bar"></div></div>
+        <p class="small">Exact answer for this matchup: <span class="num" id="mc-exact">–</span> units per hand.</p>
+        <p class="small" id="mc-status"></p>
+      </div>
+      <div class="box">
+        <div class="result-head">
+          <span class="big" id="mc-mean">–</span>
+          <span class="small" id="mc-ci">Average result per hand, with 95% range</span>
+        </div>
+        <div class="chart-wrap" id="mc-chart-wrap">
+          <svg id="mc-chart" viewBox="0 0 560 220" role="img" aria-label="Running average result per hand as more hands are dealt"></svg>
+          <div class="tip" id="mc-tip" hidden></div>
+        </div>
+        <div class="scroll"><table class="data" id="mc-breakdown"></table></div>
+      </div>
+    </div>
+    <div class="box">
+      <h3>Offline runs: 20 million hands per matchup</h3>
+      <p class="small">Run with Node on four cores (<span class="kbd">solver/montecarlo.js</span>). <em>z</em> is how many standard errors the simulation landed from the exact solver; anything inside ±2 means they agree.</p>
+      <div class="scroll"><table class="data" id="mc-offline"></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ CHART ============================ -->
+<section id="chart" role="tabpanel" aria-labelledby="t-chart" tabindex="-1" hidden>
+  <div class="panel-intro">
+    <h2 id="chart-title">Basic strategy</h2>
+    <p>The dealer's cards are face down, so there is no upcard column. The decision depends on just three things you can see: your total, how many cards you hold, and whether an Ace is counted high. Under 16 you must hit; at five cards you stop.</p>
+  </div>
+  <div class="summary" id="chart-summary"></div>
+  <div class="chart-layout">
+    <div class="box">
+      <div class="scroll"><table class="strat" id="strat"></table></div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--cinnabar)"></span>Hit</span>
+        <span><span class="sw" style="background:var(--stand)"></span>Stand</span>
+        <span>Pale cell = close call (less than 0.1 units either way)</span>
+        <span id="legend-mix" hidden><span class="sw" style="outline:2px dashed var(--gold);outline-offset:-2px"></span>Solver mixes; either is fine</span>
+      </div>
+      <p class="small">The small number is how much hitting gains (+) or loses (−) compared with standing, in betting units per hand, given you are in that spot.</p>
+    </div>
+    <div class="side">
+      <div class="box">
+        <div class="eyebrow">If you hold the bank</div>
+        <h3>Dealer strategy against one player</h3>
+        <p class="small" id="banker-note"></p>
+        <div class="banker-grid" id="banker"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ RULES ============================ -->
+<section id="rules" role="tabpanel" aria-labelledby="t-rules" tabindex="-1" hidden>
+  <div class="panel-intro">
+    <h2>The rules we simulate</h2>
+    <p>Banluck is the blackjack Singaporean and Malaysian families play over Chinese New Year. House rules vary from table to table; this is the exact set the solver and simulator use, next to standard casino blackjack.</p>
+  </div>
+
+  <div class="section">
+    <div class="scroll">
+      <table class="data compare">
+        <thead><tr><th>Rule</th><th>Banluck (this lab)</th><th>Casino blackjack (typical)</th></tr></thead>
+        <tbody>
+          <tr><td>Cards</td><td class="diff">1 deck, reshuffled every hand</td><td>6–8 decks in a shoe, reshuffled at a cut card</td></tr>
+          <tr><td>Dealer's cards</td><td class="diff">Both face down. You see only how many cards the banker holds.</td><td>One card face up (the upcard), one face down</td></tr>
+          <tr><td>What the dealer sees</td><td class="diff">How many cards you hold (your cards stay face down)</td><td>Nothing that changes play; dealer follows fixed rules</td></tr>
+          <tr><td>Ace value</td><td class="diff">2 cards: 11 or 10 · 3 cards: 10 or 1 · 4–5 cards: 1</td><td>1 or 11, always</td></tr>
+          <tr><td>Minimum to stand</td><td class="diff">You and the dealer must both reach 16</td><td>None for you; dealer hits to 17</td></tr>
+          <tr><td>Maximum cards</td><td class="diff">5. A fifth card ends your hand.</td><td>No limit</td></tr>
+          <tr><td>Two-card bonus</td><td class="diff">Ban-Ban (A-A) pays 3×, Ban-Luck (A + 10/J/Q/K) pays 2×, both settled straight away. The banker collects them too.</td><td>Blackjack (A + ten) pays 3:2; dealer blackjack wins 1×</td></tr>
+          <tr><td>Other bonuses</td><td class="diff">777 pays 7×. Five-card Charlie (5 cards, 21 or less) pays 2×, or 3× if exactly 21. The banker collects them too.</td><td>None in the base game</td></tr>
+          <tr><td>Both bust</td><td class="diff">Push: nobody wins</td><td>You lose. You busted first. This is the casino's main edge.</td></tr>
+          <tr><td>Five-card bust</td><td class="diff">Switch at the top: lose 1× (normal) or lose 2× (the house rule you play). A double bust is still a push.</td><td>Not applicable</td></tr>
+          <tr><td>Double / split / surrender</td><td class="diff">None</td><td>Double, split pairs, sometimes surrender</td></tr>
+          <tr><td>Strategy depends on</td><td class="diff">Your total, number of cards, and whether an Ace is counted high</td><td>Your total, soft/hard/pair, and the dealer's upcard</td></tr>
+          <tr><td>House edge with best play</td><td class="diff" id="rules-edge">–</td><td>About 0.5% for the casino</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <h3>Payout ladder</h3>
+      <p class="small">Higher beats lower. A hand that wins is paid at its own rung; a hand that loses pays the winner's rung. Same rung is a push, except regular totals, which compare.</p>
+      <div class="ladder">
+        <div class="rung"><span class="mult">3×</span><span><strong>Ban-Ban</strong>: two Aces on the deal. Settled immediately; beats Ban-Luck.</span></div>
+        <div class="rung"><span class="mult">2×</span><span><strong>Ban-Luck</strong>: Ace + 10, J, Q or K on the deal. Settled immediately.</span></div>
+        <div class="rung"><span class="mult">7×</span><span><strong>777</strong>: exactly three 7s. Best finished hand.</span></div>
+        <div class="rung"><span class="mult">3×</span><span><strong>Five-card 21</strong>: five cards totalling exactly 21.</span></div>
+        <div class="rung"><span class="mult">2×</span><span><strong>Five-card Charlie</strong>: five cards, 21 or less. Beats any regular total.</span></div>
+        <div class="rung"><span class="mult">1×</span><span><strong>Regular hand</strong>: 16 to 21; higher total wins, ties push.</span></div>
+        <div class="rung loss"><span class="mult">−1×</span><span><strong>Bust</strong>: over 21. Push if the banker also busts.</span></div>
+        <div class="rung loss"><span class="mult">−2×</span><span><strong>Five-card bust</strong> (2× variant): over 21 on your fifth card. Push if the banker also busts.</span></div>
+      </div>
+    </div>
+    <div class="section prose">
+      <h3>Order of play (heads-up)</h3>
+      <ol>
+        <li>Two cards each, all face down.</li>
+        <li>Any Ban-Ban or Ban-Luck is shown and settled at once. If either side had one, the hand is over.</li>
+        <li>You hit until you reach at least 16, then hit or stand as you like, up to five cards. If you bust you keep quiet; your cards stay down.</li>
+        <li>The banker plays, knowing only how many cards you hold. The banker must also reach 16, up to five cards.</li>
+        <li>Both hands are revealed and settled on the ladder.</li>
+      </ol>
+      <h3>Parameters fixed for the solver</h3>
+      <ul>
+        <li>One player against the banker; 1-unit bets.</li>
+        <li>Fresh 52-card deck each hand, so card removal is exact.</li>
+        <li><strong>Fixed dealer:</strong> hits below 16, stands on any 16+, no matter what you hold.</li>
+        <li><strong>Smart dealer:</strong> sees your card count and picks the play that hurts you most. Solved as a two-player game with CFR+, until neither side can gain more than 0.002% per hand.</li>
+        <li>The five-card bust penalty applies to the player only. A banker who busts on five cards pays the normal amount.</li>
+        <li>Your strategy uses only your own cards; it never assumes you know what the banker holds.</li>
+      </ul>
+      <h3>Not modelled</h3>
+      <ul>
+        <li>Several players at one table. In a real game the banker can reveal some players at 16 or 17, then keep drawing against the rest. The smart dealer here captures the core of that edge: playing differently depending on how many cards you hold.</li>
+        <li>Running a deck through several hands without reshuffling (card counting).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ WHY ============================ -->
+<section id="why" role="tabpanel" aria-labelledby="t-why" tabindex="-1" hidden>
+  <!--WHY-->
+</section>
+
+</div>
+</main>
+
+<script>/*__CORE__*/</script>
+<script>/*__DATA__*/</script>
+<script>/*__APP__*/</script>

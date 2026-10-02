@@ -1,0 +1,90 @@
+  <div class="panel-intro">
+    <h2>Why the strategy works</h2>
+    <p>The whole chart fits in a few rules. Each one comes with the reason behind it, so you can rebuild the chart at the table without memorising a grid.</p>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <div class="rule-card">
+        <span class="eyebrow">The one line to remember</span>
+        <p class="rule">Stand on <strong>hard 17</strong>, on <strong>19 with two cards and an Ace</strong>, and on <strong>20 with three cards and an Ace</strong>. Hit everything below.</p>
+        <p class="small">Say it as “17 · 19 · 20”. It is the complete chart for your house rules (five-card bust loses 2×) against a fixed dealer, and it gains about <span data-num="bust2.fixed.chartEV">+2.6%</span> per hand. Copying the dealer and standing on 16 loses <span data-num="bust2.fixed.baselines.standAtMin.ev">−0.7%</span>.</p>
+      </div>
+    </div>
+    <div class="section prose">
+      <h3>First, what “Ace counted high” means</h3>
+      <p>In Banluck an Ace changes value with the number of cards: 11 (or 10) on two cards, 10 (or 1) on three, and only 1 on four or five. Your hand is <em>Ace-high</em> when you are counting the Ace as 11 on two cards or as 10 on three. Everything else is a hard hand.</p>
+      <p>A-6 is 17 on two cards. Draw a 4 and the Ace can no longer be 11: it becomes 10 or 1, so you hold 20 (10 + 6 + 4). Draw a 9 instead and it is 16 (1 + 6 + 9). Totals can go down when you draw, which never happens in a casino.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>The rules, one at a time</h3>
+    <div class="rule-list">
+      <div class="rule-card">
+        <span class="idx">Rule 1 · forced</span>
+        <p class="rule">Under 16, you <em>hit</em>. No choice.</p>
+        <p>The table rule says you cannot stand below 16. That includes 7-7: it is 14, so you draw anyway and hope for the third 7 that pays 7×.</p>
+      </div>
+      <div class="rule-card">
+        <span class="idx">Rule 2 · hard hands</span>
+        <p class="rule"><em>Hit</em> hard 16. <strong>Stand</strong> on hard 17 or more.</p>
+        <p><b>Why hit 16:</b> the banker also has to reach 16, so your 16 can never beat a banker who stands. At best it ties another 16. It only wins when the banker busts. And if you bust going for more, a banker bust still saves you, because two busts is a push. In a casino your bust loses no matter what, which is why casino players often stand on 16.</p>
+        <p><b>Why stop at 17:</b> from 17, any 5 or higher busts you. That is about 7 cards in 10. A 17 already beats every banker who stops on 16.</p>
+      </div>
+      <div class="rule-card">
+        <span class="idx">Rule 3 · two cards with an Ace</span>
+        <p class="rule">A-5, A-6, A-7: <em>hit</em>. A-8, A-9: <strong>stand</strong>.</p>
+        <p><b>Why it's safe to hit:</b> the third card can't bust you. Once you draw, the Ace drops to 10 or 1, and the lower value always keeps you at 20 or under. So hitting A-7 (18) is a free chance to improve.</p>
+        <p><b>Why stand on A-8:</b> 19 is already a strong hand. The free draw from 19 more often makes you worse than better, because the Ace usually falls from 11 to 1.</p>
+      </div>
+      <div class="rule-card">
+        <span class="idx">Rule 4 · three cards with an Ace counted as 10</span>
+        <p class="rule">Total 16 to 19: <em>hit</em>. Total 20 or 21: <strong>stand</strong>.</p>
+        <p><b>Why:</b> same trick as Rule 3. On the fourth card the Ace becomes 1, and from 20 or less you can't go over 21. You also move one card closer to a Five-card Charlie (2×). This is the biggest edge on the chart: hitting an Ace-high 16 on three cards is worth about a full unit more than standing.</p>
+      </div>
+      <div class="rule-card">
+        <span class="idx">Rule 5 · four cards</span>
+        <p class="rule">Four cards and hard 16: <em>hit</em> for the Charlie. 17 or more: <strong>stand</strong>.</p>
+        <p><b>Why:</b> one more card that keeps you at 21 or under pays double. From 16, five cards in thirteen (A to 5) do that. Under your house rule a five-card bust costs 2×, so 17 is not worth the risk. With normal bust rules (switch at the top) you should hit four-card 17 as well.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section prose">
+      <h3>Against a smart banker</h3>
+      <p>Your cards are face down, but the banker can count them. Two cards and standing means you have 16 to 20. Five cards means you have either a Charlie or a five-card bust. A good banker uses that.</p>
+      <p>Change one thing: <strong>stand on a two-card hard 16</strong> most of the time. The solver hits it about one time in four, at random. If you always hit 16, then every two-card stand would show 17 or more, and the banker could hit 17 against you with no risk. Standing on some 16s keeps the banker guessing. The rest of the chart stays the same. (With normal bust rules, also hit three cards with an Ace counted as 10 on a total of 20.)</p>
+      <p>The banker's information is worth a lot. With best play you lose about <span data-num="bust2.smart.value" data-dp="1">−3.1%</span> per hand against a smart banker, compared with <span data-num="bust2.fixed.chartEV">+2.6%</span> against a fixed one. In Banluck the edge belongs to whoever plays the bank well, so take the bank when it comes round.</p>
+    </div>
+    <div class="section prose">
+      <h3>When you hold the bank</h3>
+      <ul>
+        <li><b>Against a player who stood on two cards:</b> with two cards of your own, hit 17 most of the time (about 70%). A two-card stand usually means 17 to 20, so your 17 rarely wins.</li>
+        <li><b>Four-card hands of your own:</b> against players holding two to four cards, hit 16 and 17 to chase the Charlie. The five-card bust penalty applies only to players, so a bust costs you just 1×.</li>
+        <li><b>Five-card players (2× rule):</b> stand on any hard 16 or more, and on two-card Ace hands too. They hold a Charlie, which beats you anyway, or a five-card bust that pays you 2× unless you also bust. Don't risk busting.</li>
+        <li><b>Ace counted high:</b> hit up to 18 on two cards and up to 19 on three (up to 20 against three- or four-card players), because the next card can't bust you.</li>
+      </ul>
+      <p class="small">The full banker tables are on the Strategy chart tab.</p>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section prose">
+      <h3>How this differs from casino basic strategy</h3>
+      <ul>
+        <li><b>No upcard, so no columns.</b> A casino chart has ten dealer columns. In Banluck you see nothing of the banker's hand, so your hand alone decides.</li>
+        <li><b>Busting is cheaper.</b> In a casino you lose the moment you bust. Here a banker bust turns your bust into a push. That is why 16 becomes a hit.</li>
+        <li><b>Aces work differently.</b> A casino Ace stays 11 until that would bust you. A Banluck Ace drops in value just because you drew another card, so Ace-high hands get free draws that can't bust.</li>
+        <li><b>Bonuses reward card count.</b> The Charlie and 777 pay by number of cards, not just total, which pulls you towards drawing.</li>
+        <li><b>No doubling or splitting.</b> Hit and stand are the only choices.</li>
+      </ul>
+    </div>
+    <div class="section prose">
+      <h3>How these numbers were made</h3>
+      <p><b>Exact solve.</b> All 2,983 possible hands of two to five cards from one deck were enumerated, with exact card-removal odds. Against the fixed dealer, the best play for every hand comes from working backwards from five cards. Against the smart dealer it is a two-player game, solved with CFR+ until neither side could gain more than 0.002% per hand by changing strategy.</p>
+      <p><b>Monte Carlo check.</b> 20 million real shuffled hands per matchup landed within about two standard errors of the exact values every time. Run your own on the Play tab.</p>
+      <p><b>Why it's fast.</b> Against a fixed dealer this is a one-player problem: each of the 2,983 hands is evaluated once, working backwards, in under a second. Poker and liar's dice need CFR running over millions or billions of situations, because both sides hide information and adapt. The smart-dealer version of Banluck is that kind of game too, but small enough to solve in about two and a half minutes on a laptop-class CPU.</p>
+    </div>
+  </div>
