@@ -118,6 +118,11 @@
     } else body = PIPS[+label].map(([x, y]) => suitG(st, x, y, 9.5, y > 44)).join('');
     return open(red ? ' red' : '') + corner + `<g transform="rotate(180 30 42)">${corner}</g>` + body + '</svg>';
   }
+  // A cute 五龙 dragon, used beside Five Dragons hands.
+  const DRAGON_SVG = '<svg viewBox="-8 2 146 96" class="dragon" aria-hidden="true" focusable="false"><path d="M34 56C44 86 70 88 80 66S104 40 114 60" fill="none" stroke="#5b1d12" stroke-width="22" stroke-linecap="round"/><path d="M34 56C44 86 70 88 80 66S104 40 114 60" fill="none" stroke="#d9452f" stroke-width="17" stroke-linecap="round"/><path d="M38 64C48 84 68 84 77 66S102 46 110 60" fill="none" stroke="#f6cf6a" stroke-width="4" stroke-linecap="round" stroke-dasharray="3 4" opacity=".9"/><path d="M112 62c2-9 9-14 17-12-4 2-5 4-5 6 4-2 8-1 10 2-4 0-6 2-6 4 3 0 5 2 5 5-6-2-12-1-17 2-3-1-4-4-4-7z" fill="#f3c24f" stroke="#5b1d12" stroke-width="2" stroke-linejoin="round"/><g fill="#f3c24f" stroke="#5b1d12" stroke-width="1.6" stroke-linejoin="round"><path d="M86 52l2-9 5 7z"/><path d="M96 45l4-8 3 9z"/><path d="M106 46l6-6 1 9z"/></g><g fill="#d9452f" stroke="#5b1d12" stroke-width="2" stroke-linejoin="round"><path d="M54 82c-2 6 0 9 4 9h6c1-3-1-5-4-5l-1-5z"/><path d="M90 68c1 7 4 9 8 8l4-2c0-3-2-4-5-3l-2-5z"/></g><path d="M44 22c8-2 12 4 10 9 5 0 8 5 5 10 4 2 4 8-1 10l-12-6z" fill="#f3c24f" stroke="#5b1d12" stroke-width="2" stroke-linejoin="round"/><g fill="#f6cf6a" stroke="#5b1d12" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M27 22c-2-6-5-9-9-11 4 0 6 1 8 3 0-3 1-5 3-7 0 4 1 8 3 12z"/><path d="M38 21c1-6 4-10 8-12-2 3-2 5-2 7 2-2 4-3 7-3-3 3-6 6-8 10z"/></g><circle cx="34" cy="38" r="19" fill="#d9452f" stroke="#5b1d12" stroke-width="2.4"/><ellipse cx="17" cy="46" rx="13" ry="10" fill="#ec6a4e" stroke="#5b1d12" stroke-width="2.4"/><circle cx="10" cy="43" r="1.8" fill="#5b1d12"/><circle cx="16" cy="42" r="1.8" fill="#5b1d12"/><path d="M9 50c4 4 10 4 14 0" fill="none" stroke="#5b1d12" stroke-width="2" stroke-linecap="round"/><g fill="none" stroke="#f3c24f" stroke-width="2" stroke-linecap="round"><path d="M6 46C-2 46-3 56 3 58"/><path d="M22 52c2 8-4 12-8 10"/></g><ellipse cx="28" cy="32" rx="6" ry="7" fill="#fffaf0" stroke="#5b1d12" stroke-width="1.8"/><ellipse cx="41" cy="32" rx="6" ry="7" fill="#fffaf0" stroke="#5b1d12" stroke-width="1.8"/><circle cx="27" cy="33" r="4" fill="#22140f"/><circle cx="40" cy="33" r="4" fill="#22140f"/><circle cx="25.6" cy="31.4" r="1.5" fill="#fff"/><circle cx="38.6" cy="31.4" r="1.5" fill="#fff"/><ellipse cx="44" cy="44" rx="4" ry="2.4" fill="#ff9a8a" opacity=".85"/><circle cx="6" cy="20" r="5.5" fill="#fff4d0" stroke="#c99a2e" stroke-width="1.6"/><path d="M4 18.5a2 2 0 0 1 2-1.5" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>';
+  function hydrateDragons(root) {
+    (root || document).querySelectorAll('.dragon-art:empty').forEach((el) => { el.innerHTML = DRAGON_SVG; });
+  }
   /** Fill every <span class="hand-art" data-hand="A♠{11} 6♥ XX ??"> with drawn cards. */
   function hydrateHands(root) {
     (root || document).querySelectorAll('.hand-art[data-hand]').forEach((el) => {
@@ -280,7 +285,9 @@
     G.phase = 'done';
     G.stats.hands++; G.stats.net += result;
     const badge = result > 0 ? `<span class="badge win">+${result}</span>` : result < 0 ? `<span class="badge loss">−${-result}</span>` : '<span class="badge">push</span>';
-    setMsg(`${badge}<span>${esc(text)}</span>`);
+    const pe = G.p.length === 5 ? C.evaluate(ranks(G.p), rules()) : null;
+    const dragon = pe && !pe.bust ? `<span class="dragon-art msg">${DRAGON_SVG}</span>` : '';
+    setMsg(`${badge}${dragon}<span>${esc(text)}</span>`);
     const wrong = G.decisions.filter((d) => !d.ok);
     $('#s-last').textContent = !G.decisions.length ? 'No real choices that hand: every move was forced.'
       : wrong.length ? `Off-chart that hand: ${wrong.map((d) => `${d.action} on ${cellName(d.key)} (costs ${Math.abs(d.margin).toFixed(3)})`).join('; ')}.`
@@ -723,7 +730,7 @@
     renderNumbers();
   }
 
-  hydrateHands();
+  hydrateHands(); hydrateDragons();
   bindSegs(); bindTabs(); bindGame();
   $('#mc-run').addEventListener('click', runMc);
   $('#mc-stop').addEventListener('click', () => { stopMc(); $('#mc-status').textContent = 'Stopped.'; });

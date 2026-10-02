@@ -64,7 +64,7 @@ button, select { font: inherit; color: inherit; }
 /* ---- Header ---- */
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
 .top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; padding-block: 12px 0; }
-.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
 .brand h1 { font-size: 1.45rem; }
 .brand .tag { color: var(--muted); font-size: .85rem; }
 .switches { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px 14px; }
@@ -368,11 +368,26 @@ table.edge-table td.cur { background: color-mix(in srgb, var(--gold) 12%, transp
 .cell .evs { display: grid; gap: 1px; margin-top: 3px; font-family: var(--font-mono); font-weight: 400; font-size: .7rem; line-height: 1.25; }
 .cell .evs span { opacity: .8; white-space: nowrap; }
 .cell .evs span.b { opacity: 1; font-weight: 600; }
+
+/* ---- 五龙 dragon ---- */
+.dragon-art { display: inline-block; flex: none; line-height: 0; }
+.dragon-art svg { width: 100%; height: auto; display: block; overflow: visible; }
+.brand-dragon { width: 44px; margin-right: -4px; }
+.rank { position: relative; }
+.dragon-art.corner { position: absolute; top: 8px; right: 10px; width: 74px; }
+.rank:has(.corner) .rank-top { padding-right: 70px; }
+.dragon-ex .dragon-art { width: 120px; }
+.dragon-art.msg { width: 64px; }
+@media (prefers-reduced-motion: no-preference) {
+  .dragon-art.msg svg, .dragon-art.corner svg { animation: bob 2.4s ease-in-out infinite; }
+}
+@keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-2deg); } }
 </style>
 
 <header class="top">
   <div class="wrap">
     <div class="brand">
+      <span class="dragon-art brand-dragon"></span>
       <h1>Banluck Strategy Lab</h1>
       <span class="tag">Solved hit/stand strategy · single deck · you vs the banker</span>
     </div>
