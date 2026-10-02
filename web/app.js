@@ -79,6 +79,68 @@
     return `${n} cards, ${s === 's' ? (n === '2' ? 'Ace (11) + ' + (t - 11) : 'Ace counted as 10, total ' + t) : 'total ' + t}`;
   }
 
+  // ---------------- illustrated cards (inline SVG) ----------------
+  const SUIT_SHAPES = {
+    '♥': '<path d="M5 9.4C2.2 7.2 0 5.4 0 3.1 0 1.4 1.3 0 2.9 0 3.8 0 4.6.5 5 1.3 5.4.5 6.2 0 7.1 0 8.7 0 10 1.4 10 3.1 10 5.4 7.8 7.2 5 9.4Z"/>',
+    '♦': '<path d="M5 0 9 5 5 10 1 5Z"/>',
+    '♠': '<path d="M5 0C7.9 2.3 10 4.1 10 6 10 7.5 8.9 8.6 7.5 8.6 6.7 8.6 6 8.2 5.6 7.6L6.3 10H3.7L4.4 7.6C4 8.2 3.3 8.6 2.5 8.6 1.1 8.6 0 7.5 0 6 0 4.1 2.1 2.3 5 0Z"/>',
+    '♣': '<circle cx="5" cy="2.7" r="2.4"/><circle cx="2.5" cy="6.1" r="2.4"/><circle cx="7.5" cy="6.1" r="2.4"/><path d="M4.5 6 3.7 10h2.6L5.5 6Z"/>',
+  };
+  const PIPS = {
+    2: [[30, 18], [30, 66]],
+    3: [[30, 18], [30, 42], [30, 66]],
+    4: [[20, 18], [40, 18], [20, 66], [40, 66]],
+    5: [[20, 18], [40, 18], [30, 42], [20, 66], [40, 66]],
+    6: [[20, 18], [40, 18], [20, 42], [40, 42], [20, 66], [40, 66]],
+    7: [[20, 18], [40, 18], [30, 30], [20, 42], [40, 42], [20, 66], [40, 66]],
+    8: [[20, 18], [40, 18], [30, 30], [20, 42], [40, 42], [30, 54], [20, 66], [40, 66]],
+    9: [[20, 18], [40, 18], [20, 34], [40, 34], [30, 42], [20, 50], [40, 50], [20, 66], [40, 66]],
+    10: [[20, 18], [40, 18], [30, 26], [20, 34], [40, 34], [20, 50], [40, 50], [30, 58], [20, 66], [40, 66]],
+  };
+  const suitG = (st, cx, cy, size, flip) =>
+    `<g transform="translate(${cx} ${cy})${flip ? ' rotate(180)' : ''} scale(${size / 10}) translate(-5 -5)" fill="currentColor">${SUIT_SHAPES[st]}</g>`;
+  /** One playing card as an SVG string. label: A,2..10,J,Q,K · st: suit glyph · '?' blank · null back. */
+  function cardSvg(label, st, aria) {
+    const open = (cls) => `<svg class="pc${cls}" viewBox="0 0 60 84" ${aria ? `role="img" aria-label="${aria}"` : 'aria-hidden="true"'}><rect class="bg" x=".5" y=".5" width="59" height="83" rx="5"/>`;
+    if (label === null) {
+      return open('') + '<rect class="back" x="4" y="4" width="52" height="76" rx="3"/><rect class="lattice" x="7" y="7" width="46" height="70" rx="2"/>' +
+        '<path class="lattice" d="M30 14 50 42 30 70 10 42Z M30 22 44 42 30 62 16 42Z"/><text class="fu" x="30" y="47.5" font-size="14" text-anchor="middle">福</text></svg>';
+    }
+    if (label === '?') return open(' blank') + '<text class="q" x="30" y="51" font-size="26" text-anchor="middle">?</text></svg>';
+    const red = st === '♥' || st === '♦';
+    const fs = label === '10' ? 9 : 11;
+    const corner = `<text x="7.5" y="13" font-size="${fs}" text-anchor="middle">${label}</text>${suitG(st, 7.5, 19.5, 6)}`;
+    let body = '';
+    if (label === 'A') body = suitG(st, 30, 42, 22);
+    else if (label === 'J' || label === 'Q' || label === 'K') {
+      body = `<rect class="face" x="14" y="12" width="32" height="60" rx="3"/>${suitG(st, 30, 21, 7)}${suitG(st, 30, 63, 7, true)}` +
+        `<text x="30" y="50" font-size="22" text-anchor="middle">${label}</text>`;
+    } else body = PIPS[+label].map(([x, y]) => suitG(st, x, y, 9.5, y > 44)).join('');
+    return open(red ? ' red' : '') + corner + `<g transform="rotate(180 30 42)">${corner}</g>` + body + '</svg>';
+  }
+  /** Fill every <span class="hand-art" data-hand="A♠{11} 6♥ XX ??"> with drawn cards. */
+  function hydrateHands(root) {
+    (root || document).querySelectorAll('.hand-art[data-hand]').forEach((el) => {
+      const toks = el.dataset.hand.trim().split(/\s+/);
+      const fan = el.classList.contains('fan'), n = toks.length;
+      const names = [];
+      el.innerHTML = toks.map((t, i) => {
+        let svg, tag = '';
+        if (t === 'XX') { svg = cardSvg(null); names.push('face-down card'); }
+        else if (t === '??') { svg = cardSvg('?'); names.push('any card'); }
+        else {
+          const m = /^(10|[2-9AJQK])([♠♥♦♣])(?:\{([^}]*)\})?$/.exec(t);
+          if (!m) return '';
+          svg = cardSvg(m[1], m[2]); names.push(m[1] + m[2]);
+          if (m[3] !== undefined) tag = `<span class="tag">${esc(m[3])}</span>`;
+        }
+        const rot = fan ? ((i - (n - 1) / 2) * 5).toFixed(1) : 0;
+        return `<span class="slot${tag ? ' hl' : ''}" style="--rot:${rot}deg">${tag}${svg}</span>`;
+      }).join('');
+      if (!el.hasAttribute('aria-label')) { el.setAttribute('role', 'img'); el.setAttribute('aria-label', names.join(', ')); }
+    });
+  }
+
   // ---------------- the game ----------------
   const SUITS = ['♠', '♥', '♦', '♣'];
   const LABELS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -95,13 +157,9 @@
   const ranks = (h) => h.map((c) => c.r);
 
   function cardEl(c, faceDown) {
-    const el = document.createElement('div');
-    if (faceDown) { el.className = 'card back'; el.setAttribute('aria-label', 'face-down card'); return el; }
-    const red = c.suit === '♥' || c.suit === '♦';
-    el.className = 'card' + (red ? ' red' : '');
-    el.setAttribute('aria-label', c.label + c.suit);
-    el.innerHTML = `<span class="tl">${c.label}<small>${c.suit}</small></span><span class="mid">${c.suit}</span>`;
-    return el;
+    const tmp = document.createElement('span');
+    tmp.innerHTML = faceDown ? cardSvg(null, null, 'face-down card') : cardSvg(c.label, c.suit, c.label + c.suit);
+    return tmp.firstChild;
   }
   function renderHands() {
     const ph = $('#p-hand'), dh = $('#d-hand');
@@ -463,18 +521,15 @@
     const H = rec === 1, mixed = S.dealer === 'smart' && info.hit > 0.1 && info.hit < 0.9;
     const strong = Math.abs(info.margin) >= 0.1;
     const name = cellName(`${n}|${t}|${s}`);
-    const title = `${name}: ${H ? 'hit' : 'stand'}. Hitting averages ${fmt(info.margin)} units vs standing.` + (mixed ? ` The solver hits ${Math.round(info.hit * 100)}% of the time.` : '');
+    const title = `${name}: ${H ? 'hit' : 'stand'}. Hit ${fmt(info.hitEV)}, stand ${fmt(info.standEV)} units per hand.` + (mixed ? ` The solver hits ${Math.round(info.hit * 100)}% of the time.` : '');
     const label = mixed ? (H ? 'Hit*' : 'Stand*') : H ? 'Hit' : 'Stand';
-    return `<td><div class="cell ${H ? 'H' : 'S'}${strong ? ' strong' : ''}${mixed ? ' mixed' : ''}" title="${esc(title)}">${label}<small>${fmt(info.margin, 2)}</small></div></td>`;
+    const hb = info.hitEV >= info.standEV;
+    const evs = `<span class="evs"><span${hb ? ' class="b"' : ''}>H ${fmt(info.hitEV, 2)}</span><span${hb ? '' : ' class="b"'}>S ${fmt(info.standEV, 2)}</span></span>`;
+    return `<td><div class="cell ${H ? 'H' : 'S'}${strong ? ' strong' : ''}${mixed ? ' mixed' : ''}" title="${esc(title)}">${label}${evs}</div></td>`;
   }
   function renderChart() {
     const v = V(), info = chartInfo(), pure = playerChart();
     $('#chart-title').textContent = `Basic strategy vs the ${dealerLabel()} (${bustLabel()})`;
-    const best = S.dealer === 'fixed' ? v.fixed.chartEV : v.smart.pureChartVsEqDealer;
-    const base = S.dealer === 'fixed' ? v.fixed.baselines : Object.fromEntries(Object.entries(v.smart.baselines).map(([k, b]) => [k, { name: b.name, ev: b.evVsEq }]));
-    let chips = `<div class="chip"><span class="k">Your edge with this chart</span><span class="v ${best >= 0 ? 'pos' : 'neg'}">${pct(best)}</span></div>`;
-    for (const b of Object.values(base)) chips += `<div class="chip"><span class="k">${esc(b.name)}</span><span class="v ${b.ev >= 0 ? 'pos' : 'neg'}">${pct(b.ev)}</span></div>`;
-    $('#chart-summary').innerHTML = chips;
 
     let html = '<thead><tr><th></th><th>2 cards</th><th>3 cards</th><th>4 cards</th></tr></thead><tbody>';
     html += '<tr class="group"><th colspan="4">Hard hands: no Ace, or every Ace counted as 1</th></tr>';
@@ -521,11 +576,134 @@
     $('#banker').innerHTML = bh;
   }
 
+  // ---------------- who has the edge ----------------
+  const STRATS = [
+    ['chartFixed', 'Chart for the fixed banker'],
+    ['chartSmart', 'Chart for the smart banker'],
+    ['standAtMin', 'Copy the dealer: stand on 16+'],
+    ['casino17', 'Casino habit: hit 16, stand 17+'],
+    ['dragonChaser', 'Dragon chaser: always hit 4 cards'],
+  ];
+  function edgeFor(v, sid, col) {
+    if (col === 'fixed') return sid === 'chartFixed' ? v.fixed.chartEV : sid === 'chartSmart' ? v.smart.pureChartVsFixedDealer : v.fixed.baselines[sid].ev;
+    if (col === 'smart') return sid === 'chartFixed' ? v.smart.fixedChartVsEqDealer : sid === 'chartSmart' ? v.smart.pureChartVsEqDealer : v.smart.baselines[sid].evVsEq;
+    return sid === 'chartFixed' ? v.smart.fixedChartVsDealerBR : sid === 'chartSmart' ? v.smart.pureChartVsDealerBR : v.smart.baselines[sid].evVsBR;
+  }
+  const edgeText = (x) => `${Math.abs(x * 100).toFixed(2)}%`;
+  function renderEdge() {
+    const v = V(), best = S.dealer === 'fixed' ? v.fixed.chartEV : v.smart.pureChartVsEqDealer;
+    $('#edge-ctx').textContent = `Best chart vs the ${dealerLabel()} · ${bustLabel()}`;
+    const who = $('#edge-who'), val = $('#edge-val');
+    who.textContent = best >= 0 ? "Player's edge" : "Banker's edge";
+    val.textContent = edgeText(best);
+    val.className = 'num ' + (best >= 0 ? 'pos' : 'neg');
+    const amt = Math.abs(best);
+    $('#edge-money').textContent = `Betting $10 a hand, you ${best >= 0 ? 'win' : 'lose'} about $${(amt * 10).toFixed(2)} a hand on average: roughly $${Math.round(amt * 1000)} over 100 hands.`;
+    const run = D.mc && D.mc.variants[S.variant] && D.mc.variants[S.variant].find((r) => r.id === (S.dealer === 'fixed' ? 'optimal-fixed' : 'optimal-smart'));
+    if (run) {
+      const w = run.win * 100, pu = run.push * 100, l = run.loss * 100;
+      $('#edge-wlp').innerHTML = `<div class="seg-win" style="flex:${w}"></div><div class="seg-push" style="flex:${pu}"></div><div class="seg-lose" style="flex:${l}"></div>`;
+      $('#edge-wlp').setAttribute('aria-label', `You win ${w.toFixed(1)}% of hands, push ${pu.toFixed(1)}%, lose ${l.toFixed(1)}%.`);
+      $('#edge-wlp-key').innerHTML = `<li><i class="seg-win"></i>You win <span class="mono">${w.toFixed(1)}%</span></li><li><i class="seg-push"></i>Push <span class="mono">${pu.toFixed(1)}%</span></li><li><i class="seg-lose"></i>You lose <span class="mono">${l.toFixed(1)}%</span></li>`;
+    }
+    const oid = S.variant === 'bust2' ? 'bust1' : 'bust2', o = D.variants[oid];
+    $('#edge-other').textContent = `Hands won and lost from ${(run ? run.hands / 1e6 : 20).toFixed(0)} million simulated hands. Bonus multiples sit on top of these counts. With the other rule (five-card bust ${oid === 'bust2' ? '2×' : '1×'}), best play is ${pct(o.fixed.chartEV)} vs the fixed banker and ${pct(o.smart.pureChartVsEqDealer)} vs the smart one.`;
+
+    const cols = [['fixed', 'Fixed banker'], ['smart', 'Smart banker'], ['br', 'Banker who knows your strategy']];
+    let max = 0;
+    for (const [sid] of STRATS) for (const [c] of cols) max = Math.max(max, Math.abs(edgeFor(v, sid, c)));
+    let html = '<thead><tr><th>Your strategy</th>' + cols.map(([c, n]) => `<th>${n}</th>`).join('') + '</tr></thead><tbody>';
+    for (const [sid, nm] of STRATS) {
+      const name = nm;
+      html += `<tr><td>${esc(name)}</td>`;
+      for (const [c] of cols) {
+        const x = edgeFor(v, sid, c), w = (Math.abs(x) / max * 50).toFixed(1);
+        html += `<td class="${c === S.dealer ? 'cur' : ''}"><div class="ebar"><div class="track"><div class="bar ${x >= 0 ? 'p' : 'b'}" style="${x >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div>` +
+          `<span class="v ${x >= 0 ? 'pos' : 'neg'}">${edgeText(x)}<small>${x >= 0 ? 'player' : 'banker'}</small></span></div></td>`;
+      }
+      html += '</tr>';
+    }
+    $('#edge-table').innerHTML = html + '</tbody>';
+    const copy = -v.smart.baselines.standAtMin.evVsEq;
+    $('#edge-bank').textContent = `Holding the bank? Read the table from the other side. A smart banker keeps ${edgeText(copy)} of every bet from players who copy the dealer. With four of them betting $10 each, that is about $${(copy * 40).toFixed(2)} a round. "Knows your strategy" is a banker who has watched you long enough to exploit your exact chart.`;
+  }
+
+  // ---------------- EV bars (why tab) and EV dumbbell (chart tab) ----------------
+  function evTitle(key) {
+    const [n, t, s] = key.split('|'), N = { 2: 'Two', 3: 'Three', 4: 'Four' }[n];
+    if (s === 's') return n === '2' ? `A-${t - 11} (${t})` : `${N} cards, Ace as 10: ${t}`;
+    return `${N}-card hard ${t}`;
+  }
+  function renderEvBars() {
+    const info = chartInfo();
+    $$('.evbars[data-ev]').forEach((el) => {
+      const k = el.dataset.ev, x = info[k];
+      if (!x) { el.innerHTML = ''; return; }
+      const hb = x.hitEV >= x.standEV;
+      const row = (lab, cls, val, best) => {
+        const w = (Math.min(1, Math.abs(val)) * 50).toFixed(1);
+        return `<div class="evrow${best ? ' best' : ''}"><span class="lab">${lab}</span><div class="evtrack"><div class="evbar ${cls}" style="${val >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div><span class="val">${fmt(val, 2)}</span></div>`;
+      };
+      el.innerHTML = `<div class="ev-title">${esc(evTitle(k))}</div>` + row('Stand', 'S', x.standEV, !hb) + row('Hit', 'H', x.hitEV, hb) +
+        `<div class="ev-note">${hb ? 'Hitting' : 'Standing'} is better by ${Math.abs(x.hitEV - x.standEV).toFixed(2)} units · ${dealerLabel()}, ${bustLabel()}</div>`;
+    });
+  }
+  function renderDumbbell() {
+    const info = chartInfo(), pure = playerChart();
+    const W = 320, L = 52, R = 14, T = 26, RH = 19, lo = -1.6, hi = 1.0;
+    const x = (v) => L + (W - L - R) * (v - lo) / (hi - lo);
+    const facets = [[2, 'Two cards'], [3, 'Three cards'], [4, 'Four cards']];
+    $('#dumb').innerHTML = facets.map(([n, title]) => {
+      const rows = [];
+      for (const s of ['h', 's']) {
+        const ks = [];
+        for (let t = 16; t <= 21; t++) if (info[`${n}|${t}|${s}`]) ks.push(`${n}|${t}|${s}`);
+        if (ks.length) rows.push({ head: s === 'h' ? 'Hard' : 'Ace high' }, ...ks.map((k) => ({ k })));
+      }
+      const H = T + rows.length * RH + 6;
+      let g = '';
+      for (const v of [-1.5, -1, -0.5, 0, 0.5, 1]) {
+        g += `<line x1="${x(v)}" x2="${x(v)}" y1="${T - 6}" y2="${H - 4}" style="stroke:var(--${v === 0 ? 'muted' : 'line'})" stroke-width="1"/>` +
+          `<text x="${x(v)}" y="${T - 12}" text-anchor="middle" font-size="10" style="fill:var(--muted)" font-family="var(--font-mono)">${v === 0 ? '0' : fmt(v, 1)}</text>`;
+      }
+      rows.forEach((r, i) => {
+        const y = T + i * RH + RH / 2;
+        if (r.head) { g += `<text x="0" y="${y + 4}" font-size="10.5" font-weight="600" style="fill:var(--muted)" letter-spacing=".04em">${r.head.toUpperCase()}</text>`; return; }
+        const d = info[r.k], hitIt = pure[r.k] === 1, t = r.k.split('|')[1];
+        const xs = x(d.standEV), xh = x(d.hitEV);
+        const tip = `${evTitle(r.k)}: hit ${fmt(d.hitEV, 3)}, stand ${fmt(d.standEV, 3)}. Chart: ${hitIt ? 'hit' : 'stand'}.`;
+        g += `<text x="${L - 10}" y="${y + 4}" text-anchor="end" font-size="11.5" style="fill:var(--ink)" font-family="var(--font-mono)">${r.k.endsWith('s') ? 'A·' : ''}${t}</text>` +
+          `<line x1="${xs}" x2="${xh}" y1="${y}" y2="${y}" style="stroke:var(--muted)" stroke-width="2" stroke-linecap="round"/>` +
+          `<circle cx="${xs}" cy="${y}" r="${hitIt ? 3.5 : 6}" style="fill:var(--stand);stroke:var(--surface)" stroke-width="2"/>` +
+          `<circle cx="${xh}" cy="${y}" r="${hitIt ? 6 : 3.5}" style="fill:var(--cinnabar);stroke:var(--surface)" stroke-width="2"/>` +
+          `<rect class="rowhit" x="0" y="${y - RH / 2}" width="${W}" height="${RH}" data-tip="${esc(tip)}"/>`;
+      });
+      return `<figure><figcaption class="eyebrow">${title}</figcaption><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}: expected value of hitting and standing for each total">${g}</svg><div class="tip" hidden></div></figure>`;
+    }).join('');
+    $$('#dumb figure').forEach((fig) => {
+      const tip = fig.querySelector('.tip'), svg = fig.querySelector('svg');
+      fig.querySelectorAll('.rowhit').forEach((r) => {
+        const show = () => {
+          const fr = fig.getBoundingClientRect(), rr = r.getBoundingClientRect();
+          tip.textContent = r.dataset.tip; tip.hidden = false;
+          tip.style.left = Math.min(Math.max(fr.width / 2, 120), fr.width - 120) + 'px';
+          tip.style.top = (rr.top - fr.top) + 'px';
+        };
+        r.addEventListener('pointerenter', show);
+        r.addEventListener('click', show);
+      });
+      svg.addEventListener('pointerleave', () => { tip.hidden = true; });
+    });
+  }
+
   // ---------------- dynamic numbers in rules / why ----------------
   function renderNumbers() {
     const v = V();
     const edge = S.dealer === 'fixed' ? v.fixed.chartEV : v.smart.pureChartVsEqDealer;
-    $('#rules-edge').textContent = `${edge >= 0 ? 'No house edge: you gain' : 'The banker gains'} about ${Math.abs(edge * 100).toFixed(1)}% per hand (${dealerLabel()}, ${bustLabel()})`;
+    $('#rules-edge').textContent = `${edge >= 0 ? 'No house edge: the player keeps' : 'The banker keeps'} ${Math.abs(edge * 100).toFixed(1)}% per hand (${dealerLabel()}, ${bustLabel()}).`;
+    const tok = $('#rules-edge-tok');
+    tok.textContent = pct(edge, 1);
+    tok.className = 'tok ' + (edge >= 0 ? 'pos' : 'neg');
     $$('[data-num]').forEach((el) => {
       const path = el.dataset.num.split('.');
       let x = D.variants;
@@ -539,9 +717,13 @@
     renderHands();
     refreshMcLabels();
     renderChart();
+    renderEdge();
+    renderDumbbell();
+    renderEvBars();
     renderNumbers();
   }
 
+  hydrateHands();
   bindSegs(); bindTabs(); bindGame();
   $('#mc-run').addEventListener('click', runMc);
   $('#mc-stop').addEventListener('click', () => { stopMc(); $('#mc-status').textContent = 'Stopped.'; });

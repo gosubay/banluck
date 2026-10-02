@@ -1,90 +1,233 @@
   <div class="panel-intro">
     <h2>Why the strategy works</h2>
-    <p>The whole chart fits in a few rules. Each one comes with the reason behind it, so you can rebuild the chart at the table without memorising a grid.</p>
+    <p>The whole chart fits in one line and five short rules. Each comes with the reason, so you can rebuild it at the table without memorising a grid.</p>
   </div>
 
-  <div class="two-col">
-    <div class="section">
-      <div class="rule-card">
-        <span class="eyebrow">The one line to remember</span>
-        <p class="rule">Stand on <strong>hard 17</strong>, on <strong>19 with two cards and an Ace</strong>, and on <strong>20 with three cards and an Ace</strong>. Hit everything below.</p>
-        <p class="small">Say it as “17 · 19 · 20”. It is the complete chart for your house rules (five-card bust loses 2×) against a fixed dealer, and it gains about <span data-num="bust2.fixed.chartEV">+2.6%</span> per hand. Copying the dealer and standing on 16 loses <span data-num="bust2.fixed.baselines.standAtMin.ev">−0.7%</span>.</p>
+  <!-- The mantra, on felt -->
+  <div class="mantra">
+    <div class="mantra-head">
+      <span class="eyebrow">The one line to remember</span>
+      <p class="mantra-line">Stand from <b>17</b> · <b>19</b> · <b>20</b>. Hit everything below.</p>
+    </div>
+    <div class="mantra-grid">
+      <div class="m-col">
+        <span class="m-num">17</span>
+        <span class="hand-art fan" data-hand="10♣ 7♦"></span>
+        <span class="m-cap">Any hard hand: no Ace, or the Ace counts 1</span>
+      </div>
+      <div class="m-col">
+        <span class="m-num">19</span>
+        <span class="hand-art fan" data-hand="A♠ 8♥"></span>
+        <span class="m-cap">Two cards with an Ace counted 11</span>
+      </div>
+      <div class="m-col">
+        <span class="m-num">20</span>
+        <span class="hand-art fan" data-hand="A♦ 4♣ 5♠"></span>
+        <span class="m-cap">Three cards with an Ace counted 10</span>
       </div>
     </div>
-    <div class="section prose">
-      <h3>First, what “Ace counted high” means</h3>
-      <p>In Banluck an Ace changes value with the number of cards: 11 (or 10) on two cards, 10 (or 1) on three, and only 1 on four or five. Your hand is <em>Ace-high</em> when you are counting the Ace as 11 on two cards or as 10 on three. Everything else is a hard hand.</p>
-      <p>A-6 is 17 on two cards. Draw a 4 and the Ace can no longer be 11: it becomes 10 or 1, so you hold 20 (10 + 6 + 4). Draw a 9 instead and it is 16 (1 + 6 + 9). Totals can go down when you draw, which never happens in a casino.</p>
+    <p class="mantra-foot">This is the complete chart for the 2× five-card bust rule against a fixed banker. It wins about <span data-num="bust2.fixed.chartEV">+2.6%</span> per hand. Copying the dealer and standing on 16 loses <span data-num="bust2.fixed.baselines.standAtMin.ev">−0.7%</span>.</p>
+  </div>
+
+  <!-- The big question -->
+  <div class="section qa">
+    <div class="sec-head">
+      <span class="eyebrow">The question everyone asks</span>
+      <h3>“Hitting 16 to 19? Surely the bust risk is huge.”</h3>
+    </div>
+    <p class="lede">We never hit a <b>hard</b> 17, 18 or 19. Like a casino player, you stand on those. The “hit 16 to 19” rule is only for <b>three cards with an Ace counted as 10</b>, and there the next card <b>cannot bust you</b>.</p>
+
+    <div class="qa-grid">
+      <div class="qa-side">
+        <div class="eyebrow">Hard 17</div>
+        <span class="hand-art fan" data-hand="10♠ 7♥"></span>
+        <div class="meter" aria-label="Bust chance on the next card: 68%"><div class="meter-fill bad" style="width:68%"></div></div>
+        <p><span class="mono">68%</span> chance the next card busts you. <span class="pill stand">Stand</span></p>
+      </div>
+      <div class="qa-side">
+        <div class="eyebrow">Three cards, Ace counted 10, total 19</div>
+        <span class="hand-art fan" data-hand="A♣ 4♥ 5♦"></span>
+        <div class="meter" aria-label="Bust chance on the next card: 0%"><div class="meter-fill bad" style="width:0%"></div></div>
+        <p><span class="mono">0%</span> chance the next card busts you. <span class="pill hit">Hit</span></p>
+      </div>
+    </div>
+
+    <figure class="mech">
+      <div class="mech-row" role="img" aria-label="A, 4, 5 is 19 with the Ace as 10. Draw any card and the Ace drops to 1, so the hand becomes 10 plus the new card: between 11 and 20.">
+        <div class="mech-step">
+          <span class="hand-art" data-hand="A♣{10} 4♥ 5♦"></span>
+          <span class="mono big-total">19</span>
+        </div>
+        <div class="ace-arrow"><svg viewBox="0 0 48 20" aria-hidden="true"><path d="M2 10H40M33 3l8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>draw any card</span></div>
+        <div class="mech-step">
+          <span class="hand-art" data-hand="A♣{1} 4♥ 5♦ ??"></span>
+          <span class="mono big-total">10 + ?</span>
+        </div>
+      </div>
+      <figcaption>On the fourth card the Ace drops from 10 to 1. That loses 9, and the biggest card you can draw adds 10. So you land between 11 and 20, never over.</figcaption>
+    </figure>
+
+    <div class="two-col tight">
+      <div class="prose">
+        <h4>So why not stand on 19?</h4>
+        <p>Because the hit is free and the hand gets a shot at <span class="cjk">五龙</span>. After the hit, with the 2× rule against a fixed banker:</p>
+        <div class="stack" role="img" aria-label="After hitting: 32.5% end on four-card 20 or 21, 23.8% on four-card 17 to 19, 25.1% make Five Dragons, 18.7% go on to a five-card bust.">
+          <div class="seg-a" style="flex:32.5"></div><div class="seg-b" style="flex:23.8"></div><div class="seg-c" style="flex:25.1"></div><div class="seg-d" style="flex:18.7"></div>
+        </div>
+        <ul class="stack-key">
+          <li><i class="seg-a"></i>Four-card 20 or 21 <span class="mono">32.5%</span></li>
+          <li><i class="seg-b"></i>Four-card 17 to 19 <span class="mono">23.8%</span></li>
+          <li><i class="seg-c"></i><span class="cjk">五龙</span>, paid 2× or 3× <span class="mono">25.1%</span></li>
+          <li><i class="seg-d"></i>Five-card bust <span class="mono">18.7%</span></li>
+        </ul>
+        <p class="small">The only bust risk comes later, if you land on 11 to 16 and need a fifth card. Even then the fifth card makes <span class="cjk">五龙</span> more often than it busts.</p>
+      </div>
+      <div class="prose">
+        <h4>The average result from that spot</h4>
+        <div class="evbars" data-ev="3|19|s"></div>
+        <p class="small">Units per hand, from the solver, for the rule and banker chosen at the top. The bars update when you flip the switches.</p>
+      </div>
     </div>
   </div>
 
+  <!-- The five rules -->
   <div class="section">
-    <h3>The rules, one at a time</h3>
+    <div class="sec-head"><h3>The five rules</h3></div>
     <div class="rule-list">
-      <div class="rule-card">
-        <span class="idx">Rule 1 · forced</span>
-        <p class="rule">Under 16, you <em>hit</em>. No choice.</p>
-        <p>The table rule says you cannot stand below 16. That includes 7-7: it is 14, so you draw anyway and hope for the third 7 that pays 7×.</p>
-      </div>
-      <div class="rule-card">
-        <span class="idx">Rule 2 · hard hands</span>
-        <p class="rule"><em>Hit</em> hard 16. <strong>Stand</strong> on hard 17 or more.</p>
-        <p><b>Why hit 16:</b> the banker also has to reach 16, so your 16 can never beat a banker who stands. At best it ties another 16. It only wins when the banker busts. And if you bust going for more, a banker bust still saves you, because two busts is a push. In a casino your bust loses no matter what, which is why casino players often stand on 16.</p>
-        <p><b>Why stop at 17:</b> from 17, any 5 or higher busts you. That is about 7 cards in 10. A 17 already beats every banker who stops on 16.</p>
-      </div>
-      <div class="rule-card">
-        <span class="idx">Rule 3 · two cards with an Ace</span>
-        <p class="rule">A-5, A-6, A-7: <em>hit</em>. A-8, A-9: <strong>stand</strong>.</p>
-        <p><b>Why it's safe to hit:</b> the third card can't bust you. Once you draw, the Ace drops to 10 or 1, and the lower value always keeps you at 20 or under. So hitting A-7 (18) is a free chance to improve.</p>
-        <p><b>Why stand on A-8:</b> 19 is already a strong hand. The free draw from 19 more often makes you worse than better, because the Ace usually falls from 11 to 1.</p>
-      </div>
-      <div class="rule-card">
-        <span class="idx">Rule 4 · three cards with an Ace counted as 10</span>
-        <p class="rule">Total 16 to 19: <em>hit</em>. Total 20 or 21: <strong>stand</strong>.</p>
-        <p><b>Why:</b> same trick as Rule 3. On the fourth card the Ace becomes 1, and from 20 or less you can't go over 21. You also move one card closer to a Five-card Charlie (2×). This is the biggest edge on the chart: hitting an Ace-high 16 on three cards is worth about a full unit more than standing.</p>
-      </div>
-      <div class="rule-card">
-        <span class="idx">Rule 5 · four cards</span>
-        <p class="rule">Four cards and hard 16: <em>hit</em> for the Charlie. 17 or more: <strong>stand</strong>.</p>
-        <p><b>Why:</b> one more card that keeps you at 21 or under pays double. From 16, five cards in thirteen (A to 5) do that. Under your house rule a five-card bust costs 2×, so 17 is not worth the risk. With normal bust rules (switch at the top) you should hit four-card 17 as well.</p>
-      </div>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="7♠ 7♥"></span><span class="pill forced">Must hit</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 1 · forced</span>
+          <p class="rule">Under 16, you <em>hit</em>. No choice.</p>
+          <p>The table won't let you stand below 16. Even 7-7 draws, and the third 7 pays 7×.</p>
+        </div>
+      </article>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="10♠ 6♥"></span><span class="pill hit">Hit</span><span class="chip-bust">60% bust</span></div>
+          <div class="ex"><span class="hand-art fan" data-hand="10♦ 7♣"></span><span class="pill stand">Stand</span><span class="chip-bust">68% bust</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 2 · hard hands</span>
+          <p class="rule"><em>Hit</em> hard 16. <strong>Stand</strong> on hard 17 or more.</p>
+          <p><b>Why hit 16 at 60% bust?</b> The banker must also reach 16, so a standing 16 can only win when the banker busts. Here is how a fixed banker finishes:</p>
+          <div class="stack" role="img" aria-label="Fixed banker finishes: busts 21.0%, stops on 16 14.4%, ends on 17 or better 64.6%.">
+            <div class="seg-win" style="flex:21"></div><div class="seg-push" style="flex:14.4"></div><div class="seg-lose" style="flex:64.6"></div>
+          </div>
+          <ul class="stack-key">
+            <li><i class="seg-win"></i>Banker busts <span class="mono">21.0%</span>: your 16 wins</li>
+            <li><i class="seg-push"></i>Banker stops on 16 <span class="mono">14.4%</span>: push</li>
+            <li><i class="seg-lose"></i>Banker makes 17 or better <span class="mono">64.6%</span>: your 16 loses</li>
+          </ul>
+          <p>A standing 16 loses two hands in three. Hitting gives you a 40% shot at 17 to 21, and when you bust, the banker's 21% bust chance still turns it into a push.</p>
+          <p><b>Why stop at 17?</b> A 17 already beats every banker who stops on 16, and 7 cards in 10 would bust it.</p>
+          <div class="ev-duo">
+            <div class="evbars" data-ev="2|16|h"></div>
+            <div class="evbars" data-ev="2|17|h"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="A♥ 7♠"></span><span class="pill hit">Hit</span><span class="chip-bust safe">0% bust</span></div>
+          <div class="ex"><span class="hand-art fan" data-hand="A♦ 8♣"></span><span class="pill stand">Stand</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 3 · two cards with an Ace</span>
+          <p class="rule">A-5, A-6, A-7: <em>hit</em>. A-8, A-9: <strong>stand</strong>.</p>
+          <p><b>Why hit A-7 (18)?</b> The third card can't bust you. The Ace drops from 11 to 10 or 1, and the lower value always keeps you at 21 or under.</p>
+          <p><b>Why stand on A-8 (19)?</b> 19 is already strong. A draw from 19 makes you worse more often than better.</p>
+          <div class="ev-duo">
+            <div class="evbars" data-ev="2|18|s"></div>
+            <div class="evbars" data-ev="2|19|s"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="A♣ 4♥ 5♦"></span><span class="pill hit">Hit</span><span class="chip-bust safe">0% bust</span></div>
+          <div class="ex"><span class="hand-art fan" data-hand="A♠ 4♦ 6♣"></span><span class="pill stand">Stand</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 4 · three cards, Ace counted as 10</span>
+          <p class="rule">Total 16 to 19: <em>hit</em>. Total 20 or 21: <strong>stand</strong>.</p>
+          <p><b>Why:</b> the same free draw as Rule 3, explained above. The fourth card turns the Ace into a 1, so you can't go over 21, and you move one card from <span class="cjk">五龙</span>. At 20 the hand is too good to give up.</p>
+          <div class="ev-duo">
+            <div class="evbars" data-ev="3|19|s"></div>
+            <div class="evbars" data-ev="3|20|s"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="3♠ 4♥ 2♦ 7♣"></span><span class="pill hit">Hit</span><span class="chip-bust">65% bust</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 5 · four cards</span>
+          <p class="rule">Four cards and hard 16: <em>hit</em> for <span class="cjk">五龙</span>. 17 or more: <strong>stand</strong>.</p>
+          <p><b>Why:</b> a standing 16 only wins when the banker busts. Any Ace to 5 makes <span class="cjk">五龙</span>, paid 2×. With the 2× bust rule, 17 is not worth the risk. With the normal 1× rule (switch at the top), hit four-card 17 too.</p>
+          <div class="ev-duo">
+            <div class="evbars" data-ev="4|16|h"></div>
+            <div class="evbars" data-ev="4|17|h"></div>
+          </div>
+        </div>
+      </article>
     </div>
   </div>
 
-  <div class="two-col">
-    <div class="section prose">
+  <!-- Smart banker -->
+  <div class="section">
+    <div class="sec-head">
       <h3>Against a smart banker</h3>
-      <p>Your cards are face down, but the banker can count them. Two cards and standing means you have 16 to 20. Five cards means you have either a Charlie or a five-card bust. A good banker uses that.</p>
-      <p>Change one thing: <strong>stand on a two-card hard 16</strong> most of the time. The solver hits it about one time in four, at random. If you always hit 16, then every two-card stand would show 17 or more, and the banker could hit 17 against you with no risk. Standing on some 16s keeps the banker guessing. The rest of the chart stays the same. (With normal bust rules, also hit three cards with an Ace counted as 10 on a total of 20.)</p>
-      <p>The banker's information is worth a lot. With best play you lose about <span data-num="bust2.smart.value" data-dp="1">−3.1%</span> per hand against a smart banker, compared with <span data-num="bust2.fixed.chartEV">+2.6%</span> against a fixed one. In Banluck the edge belongs to whoever plays the bank well, so take the bank when it comes round.</p>
+      <p class="small">Your cards are face down, but the banker can count them.</p>
     </div>
-    <div class="section prose">
-      <h3>When you hold the bank</h3>
-      <ul>
-        <li><b>Against a player who stood on two cards:</b> with two cards of your own, hit 17 most of the time (about 70%). A two-card stand usually means 17 to 20, so your 17 rarely wins.</li>
-        <li><b>Four-card hands of your own:</b> against players holding two to four cards, hit 16 and 17 to chase the Charlie. The five-card bust penalty applies only to players, so a bust costs you just 1×.</li>
-        <li><b>Five-card players (2× rule):</b> stand on any hard 16 or more, and on two-card Ace hands too. They hold a Charlie, which beats you anyway, or a five-card bust that pays you 2× unless you also bust. Don't risk busting.</li>
-        <li><b>Ace counted high:</b> hit up to 18 on two cards and up to 19 on three (up to 20 against three- or four-card players), because the next card can't bust you.</li>
-      </ul>
-      <p class="small">The full banker tables are on the Strategy chart tab.</p>
+    <div class="tells">
+      <div class="tell"><span class="hand-art sm fan" data-hand="XX XX"></span><b>Two cards, standing</b><span>You hold 16 to 20.</span></div>
+      <div class="tell"><span class="hand-art sm fan" data-hand="XX XX XX"></span><b>Three cards</b><span>You drew once: usually 17 to 21, or a silent bust.</span></div>
+      <div class="tell"><span class="hand-art sm fan" data-hand="XX XX XX XX XX"></span><b>Five cards</b><span><span class="cjk">五龙</span> or a five-card bust. Nothing in between.</span></div>
+    </div>
+    <div class="two-col">
+      <div class="prose">
+        <h4>Change one thing</h4>
+        <p><strong>Stand on a two-card hard 16</strong> most of the time. The solver hits it about one time in four, at random. If you always hit 16, every two-card stand would show 17 or more, and the banker could hit 17 against you safely.</p>
+        <p>With best play you lose about <span data-num="bust2.smart.value" data-dp="1">−3.1%</span> per hand against a smart banker, against <span data-num="bust2.fixed.chartEV">+2.6%</span> against a fixed one. The banker's information decides the game, so take the bank when it comes round.</p>
+      </div>
+      <div class="prose">
+        <h4>When you hold the bank</h4>
+        <ul class="tips">
+          <li><b>Player stood on two cards:</b> with your own two-card 17, hit about 70% of the time. Their stand usually means 17 to 20.</li>
+          <li><b>Your four-card 16 or 17:</b> hit against players holding two to four cards. Your five-card bust only costs 1×.</li>
+          <li><b>Five-card players (2× rule):</b> stand on any hard 16 or more. They hold <span class="cjk">五龙</span>, which beats you anyway, or a bust that pays you 2× unless you bust too.</li>
+          <li><b>Ace counted high:</b> hit up to 18 on two cards and up to 19 on three, because the next card can't bust you.</li>
+        </ul>
+        <p class="small">The full banker tables are on the Strategy chart tab.</p>
+      </div>
     </div>
   </div>
 
-  <div class="two-col">
-    <div class="section prose">
-      <h3>How this differs from casino basic strategy</h3>
-      <ul>
-        <li><b>No upcard, so no columns.</b> A casino chart has ten dealer columns. In Banluck you see nothing of the banker's hand, so your hand alone decides.</li>
-        <li><b>Busting is cheaper.</b> In a casino you lose the moment you bust. Here a banker bust turns your bust into a push. That is why 16 becomes a hit.</li>
-        <li><b>Aces work differently.</b> A casino Ace stays 11 until that would bust you. A Banluck Ace drops in value just because you drew another card, so Ace-high hands get free draws that can't bust.</li>
-        <li><b>Bonuses reward card count.</b> The Charlie and 777 pay by number of cards, not just total, which pulls you towards drawing.</li>
-        <li><b>No doubling or splitting.</b> Hit and stand are the only choices.</li>
-      </ul>
-    </div>
-    <div class="section prose">
-      <h3>How these numbers were made</h3>
-      <p><b>Exact solve.</b> All 2,983 possible hands of two to five cards from one deck were enumerated, with exact card-removal odds. Against the fixed dealer, the best play for every hand comes from working backwards from five cards. Against the smart dealer it is a two-player game, solved with CFR+ until neither side could gain more than 0.002% per hand by changing strategy.</p>
-      <p><b>Monte Carlo check.</b> 20 million real shuffled hands per matchup landed within about two standard errors of the exact values every time. Run your own on the Play tab.</p>
-      <p><b>Why it's fast.</b> Against a fixed dealer this is a one-player problem: each of the 2,983 hands is evaluated once, working backwards, in under a second. Poker and liar's dice need CFR running over millions or billions of situations, because both sides hide information and adapt. The smart-dealer version of Banluck is that kind of game too, but small enough to solve in about two and a half minutes on a laptop-class CPU.</p>
+  <!-- Casino contrast -->
+  <div class="section">
+    <div class="sec-head"><h3>Why this isn't casino basic strategy</h3></div>
+    <div class="diff-grid">
+      <div class="diff"><span class="hand-art sm" data-hand="XX XX"></span><b>No upcard</b><span>A casino chart has ten dealer columns. Here your own hand decides everything.</span></div>
+      <div class="diff"><span class="tok-row"><span class="tok">Bust + bust = push</span></span><b>Busting is cheaper</b><span>A banker bust rescues your bust. That is why hard 16 becomes a hit.</span></div>
+      <div class="diff"><span class="tok-row"><span class="tok">11/10</span><span class="tok">10/1</span><span class="tok">1</span></span><b>Aces shrink</b><span>Drawing lowers the Ace, so Ace-high hands get draws that can't bust.</span></div>
+      <div class="diff"><span class="hand-art sm fan" data-hand="A♦ 2♠ 3♥ 4♣ 6♦"></span><b>Card count pays</b><span><span class="cjk">五龙</span> and 777 pay by number of cards, which pulls you towards drawing.</span></div>
     </div>
   </div>
+
+  <details class="more">
+    <summary>How these numbers were made</summary>
+    <div class="prose">
+      <p><b>Exact solve.</b> All 2,983 possible hands of two to five cards from one deck were enumerated with exact card-removal odds. Against the fixed banker, the best play for every hand comes from working backwards from five cards. Against the smart banker it is a two-player game, solved with CFR+ until neither side could gain more than 0.002% per hand.</p>
+      <p><b>Monte Carlo check.</b> 20 million shuffled hands per matchup landed within about two standard errors of the exact values every time. The bust chances and outcome splits on this page come from 3 to 6 million simulated hands each. Run your own on the Play tab.</p>
+      <p><b>Why it's fast.</b> Against a fixed banker this is a one-player problem, solved in under a second. Poker and liar's dice need CFR over millions or billions of situations because both sides hide information. The smart-banker version of Banluck is that kind of game too, but small enough to solve in about two and a half minutes.</p>
+    </div>
+  </details>

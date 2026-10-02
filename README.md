@@ -9,12 +9,12 @@ Open `index.html` in a browser. It is a single self-contained file.
 - 1 deck, fresh shuffle every hand, one player against the banker; all cards face down.
 - Ace = 11 or 10 on two cards, 10 or 1 on three cards, 1 on four or five cards.
 - Player and banker must both reach 16; maximum five cards.
-- Ban-Ban (A-A) 3×, Ban-Luck (A + ten-value) 2×, settled immediately. 777 pays 7×, Five-card Charlie 2× (3× if exactly 21). The banker collects these too.
+- Ban-Ban (A-A) 3×, Ban-Luck (A + ten-value) 2×, settled immediately. 777 pays 7×, 五龙 (Five Dragons: five cards, 21 or less) 2×, or 3× if exactly 21. The banker collects these too.
 - Both bust = push.
 - Five-card bust: two variants are solved, **lose 1×** and **lose 2×** (player only).
 - Two dealer models: **fixed** (stands on any 16+) and **smart** (sees how many cards the player holds; solved as a two-player game with CFR+).
 
-## Headline results (EV per hand for the player)
+## Headline results (player's edge per hand; negative = banker's edge)
 
 | Variant | vs fixed dealer | vs smart dealer (game value) |
 |---|---|---|
@@ -36,4 +36,4 @@ node build.js               # inline everything             -> index.html, dist/
 - `js/core.js`: rules engine, hand evaluation, settlement, dealing and simulation (shared by Node and the browser).
 - `solver/solve.js`: exact solver. Enumerates all 2,983 hand compositions with exact card-removal odds. The fixed dealer is solved by backward induction; the smart dealer by CFR+ to < 0.002% exploitability.
 - `solver/montecarlo.js`: multi-threaded Monte Carlo verification of the solved charts.
-- `web/`: page template, app logic and explanation copy; `build.js` assembles `index.html`.
+- `web/`: page template, app logic, and the Rules and Why-it-works copy (`rules.html`, `why.html`); `build.js` assembles `index.html`.

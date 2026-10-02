@@ -17,7 +17,7 @@
     maxCards: 5,
     bothBustPush: true,
     fiveCardBustMult: 2, // 1 = normal bust, 2 = a 5-card bust loses double (player only)
-    pay: Object.freeze({ banBan: 3, banLuck: 2, triple7: 7, charlie: 2, charlie21: 3 }),
+    pay: Object.freeze({ banBan: 3, banLuck: 2, triple7: 7, dragon: 2, dragon21: 3 }),
   });
 
   function rulesWith(overrides) {
@@ -69,8 +69,8 @@
     return null;
   }
 
-  // Final-hand tiers, best first: 777 > 5-card 21 > 5-card Charlie > regular.
-  const TIER = { BUST: -1, REGULAR: 0, CHARLIE: 1, CHARLIE21: 2, TRIPLE7: 3 };
+  // Final-hand tiers, best first: 777 > 五龙 21 > 五龙 (Five Dragons) > regular.
+  const TIER = { BUST: -1, REGULAR: 0, DRAGON: 1, DRAGON21: 2, TRIPLE7: 3 };
 
   /** Full evaluation of a final (or in-progress) hand. */
   function evaluate(cards, rules) {
@@ -86,8 +86,8 @@
     } else if (s.n === 3 && s.sevens === 3) {
       tier = TIER.TRIPLE7; mult = rules.pay.triple7; label = '777';
     } else if (s.n === 5) {
-      if (v.total === 21) { tier = TIER.CHARLIE21; mult = rules.pay.charlie21; label = 'Five-card 21'; }
-      else { tier = TIER.CHARLIE; mult = rules.pay.charlie; label = 'Five-card Charlie'; }
+      if (v.total === 21) { tier = TIER.DRAGON21; mult = rules.pay.dragon21; label = 'Five Dragons 21'; }
+      else { tier = TIER.DRAGON; mult = rules.pay.dragon; label = 'Five Dragons'; }
     }
     // A hand must stop when bust, at 5 cards, or on 777.
     const terminal = bust || s.n >= 5 || tier === TIER.TRIPLE7;

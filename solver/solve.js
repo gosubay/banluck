@@ -372,7 +372,7 @@ function baselineCharts(T) {
   return {
     standAtMin: { name: 'Stand on 16+ (copy the dealer)', chart: mk(() => false) },
     casino17: { name: 'Casino habit: hit 16, stand 17+', chart: mk((n, t) => t < 17) },
-    charlieHunter: { name: 'Charlie chaser: always hit 4 cards', chart: mk((n, t) => n === 4) },
+    dragonChaser: { name: 'Dragon chaser: always hit 4 cards', chart: mk((n, t) => n === 4) },
   };
 }
 

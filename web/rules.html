@@ -1,0 +1,175 @@
+  <div class="panel-intro">
+    <h2>The rules we simulate</h2>
+    <p>Banluck is the blackjack Singaporean and Malaysian families play over Chinese New Year. House rules vary from table to table. This is the exact set the solver uses.</p>
+  </div>
+
+  <!-- Hand rankings, illustrated -->
+  <div class="section">
+    <div class="sec-head">
+      <h3>Hand rankings</h3>
+      <p class="small">A winning hand is paid at its own multiple. A losing hand pays the winner's multiple. The banker collects these bonuses too.</p>
+    </div>
+    <div class="rank-group">
+      <div class="eyebrow">On the deal · shown and settled at once</div>
+      <div class="rank-grid">
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">3×</span><span class="rname">Ban-Ban</span></div>
+          <span class="hand-art fan" data-hand="A♠ A♥"></span>
+          <p>Two Aces. Beats Ban-Luck.</p>
+        </div>
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">2×</span><span class="rname">Ban-Luck</span></div>
+          <span class="hand-art fan" data-hand="A♣ K♦"></span>
+          <p>Ace with 10, J, Q or K.</p>
+        </div>
+      </div>
+    </div>
+    <div class="rank-group">
+      <div class="eyebrow">Finished hands · best first</div>
+      <div class="rank-grid">
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">7×</span><span class="rname">777</span></div>
+          <span class="hand-art fan" data-hand="7♠ 7♥ 7♦"></span>
+          <p>Exactly three 7s. The best finished hand.</p>
+        </div>
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">3×</span><span class="rname"><span class="cjk">五龙</span> 21</span></div>
+          <span class="hand-art fan" data-hand="2♣ 3♦ 4♠ 5♥ 7♣"></span>
+          <p>Five cards totalling exactly 21.</p>
+        </div>
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">2×</span><span class="rname"><span class="cjk">五龙</span> Five Dragons</span></div>
+          <span class="hand-art fan" data-hand="A♦ 2♠ 3♥ 4♣ 6♦"></span>
+          <p>Five cards, 21 or less. Beats any regular total.</p>
+        </div>
+        <div class="rank">
+          <div class="rank-top"><span class="mult">1×</span><span class="rname">Regular hand</span></div>
+          <span class="hand-art fan" data-hand="10♠ 9♥"></span>
+          <p>16 to 21. Higher total wins; ties push.</p>
+        </div>
+        <div class="rank loss">
+          <div class="rank-top"><span class="mult">−1×</span><span class="rname">Bust</span></div>
+          <span class="hand-art fan" data-hand="K♣ 6♥ 8♠"></span>
+          <p>Over 21. A push if the banker busts too.</p>
+        </div>
+        <div class="rank loss">
+          <div class="rank-top"><span class="mult">−2×</span><span class="rname">Five-card bust</span></div>
+          <span class="hand-art fan" data-hand="3♠ 4♦ 5♣ 2♥ 9♠"></span>
+          <p>Over 21 on your fifth card (the 2× house rule). Still a push if the banker busts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ace values -->
+  <div class="section">
+    <div class="sec-head">
+      <h3>The Ace shrinks as your hand grows</h3>
+      <p class="small">This is the rule that makes Banluck strategy different from casino blackjack.</p>
+    </div>
+    <figure class="ace-flow" role="img" aria-label="The same Ace counts 11 on two cards, 10 on three cards, and 1 on four cards. The hand goes 17, then 20, then 16.">
+      <div class="ace-step">
+        <span class="hand-art" data-hand="A♠{11} 6♥"></span>
+        <div class="ace-cap"><span class="mono big-total">17</span><span class="small">2 cards: Ace is 11 (or 10)</span></div>
+      </div>
+      <div class="ace-arrow" aria-hidden="true"><svg viewBox="0 0 48 20"><path d="M2 10H40M33 3l8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>draw a 4</span></div>
+      <div class="ace-step">
+        <span class="hand-art" data-hand="A♠{10} 6♥ 4♣"></span>
+        <div class="ace-cap"><span class="mono big-total">20</span><span class="small">3 cards: Ace is 10 (or 1)</span></div>
+      </div>
+      <div class="ace-arrow" aria-hidden="true"><svg viewBox="0 0 48 20"><path d="M2 10H40M33 3l8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>draw a 5</span></div>
+      <div class="ace-step">
+        <span class="hand-art" data-hand="A♠{1} 6♥ 4♣ 5♦"></span>
+        <div class="ace-cap"><span class="mono big-total">16</span><span class="small">4–5 cards: Ace is 1</span></div>
+      </div>
+    </figure>
+    <p class="small">You drew a 5 and your total went <em>down</em> from 20 to 16. That never happens in a casino.</p>
+  </div>
+
+  <!-- Order of play -->
+  <div class="section">
+    <div class="sec-head"><h3>One hand, start to finish</h3></div>
+    <ol class="steps">
+      <li><span class="hand-art sm fan" data-hand="XX XX"></span><b>Deal</b><span>Two cards each, all face down.</span></li>
+      <li><span class="hand-art sm fan" data-hand="A♥ Q♠"></span><b>Bonus check</b><span>Ban-Ban or Ban-Luck is shown and paid. The hand ends.</span></li>
+      <li><span class="hand-art sm fan" data-hand="XX XX XX"></span><b>You draw</b><span>Hit to at least 16, then hit or stand. Five cards max. Bust in silence.</span></li>
+      <li><span class="hand-art sm fan" data-hand="XX XX XX XX"></span><b>Banker draws</b><span>Sees only how many cards you hold. Must also reach 16.</span></li>
+      <li><span class="hand-art sm fan" data-hand="10♦ 9♣"></span><b>Reveal</b><span>Both hands flip and settle on the rankings above.</span></li>
+    </ol>
+  </div>
+
+  <!-- Banluck vs casino -->
+  <div class="section">
+    <div class="sec-head">
+      <h3>Banluck vs casino blackjack</h3>
+      <p class="small">Gold marks where Banluck differs.</p>
+    </div>
+    <div class="vs-grid">
+      <div class="vs">
+        <div class="eyebrow">Dealer's cards</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="hand-art sm" data-hand="XX XX"></span><span>Both face down. You see nothing.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="hand-art sm" data-hand="K♠ XX"></span><span>One upcard to plan around.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Ace value</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">11/10</span><span class="tok">10/1</span><span class="tok">1</span></span><span>Depends on 2, 3 or 4+ cards.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">1 or 11</span></span><span>Always your choice.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Both bust</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">Push</span></span><span>Nobody wins. Busting is cheaper.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain neg">You lose</span></span><span>You busted first. This is the casino's edge.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Must reach</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">16</span></span><span>You and the banker both.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">17</span></span><span>The dealer only. You can stand on anything.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Card limit</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="hand-art sm fan" data-hand="XX XX XX XX XX"></span><span>Five. <span class="cjk">五龙</span> pays 2×.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">∞</span></span><span>Draw as many as you like.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Bonuses</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">3×</span><span class="tok">2×</span><span class="tok">7×</span></span><span>Ban-Ban, Ban-Luck, 777, <span class="cjk">五龙</span>. The banker gets them too.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">3:2</span></span><span>Blackjack only.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Cards in play</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">1 deck</span></span><span>Reshuffled every hand.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">6–8 decks</span></span><span>Dealt from a shoe.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Your choices</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">Hit</span><span class="tok">Stand</span></span><span>That's all.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">+ Double</span><span class="tok plain">Split</span></span><span>Sometimes surrender too.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Edge with best play</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok" id="rules-edge-tok">–</span></span><span id="rules-edge">–</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain neg">−0.5%</span></span><span>The casino always keeps an edge.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <details class="more">
+      <summary>Settings fixed for the solver</summary>
+      <ul>
+        <li>One player against the banker, 1-unit bets.</li>
+        <li>A fresh 52-card deck every hand, so card-removal odds are exact.</li>
+        <li><b>Fixed banker:</b> hits below 16, stands on any 16 or more.</li>
+        <li><b>Smart banker:</b> sees your card count and plays to hurt you most. Solved as a two-player game with CFR+, to within 0.002% per hand.</li>
+        <li>The five-card bust penalty is for players only. A banker who busts on five cards pays 1×.</li>
+        <li>Your strategy uses only your own cards.</li>
+      </ul>
+    </details>
+    <details class="more">
+      <summary>Not modelled</summary>
+      <ul>
+        <li>Several players at one table. A real banker can reveal some players at 16 or 17, then keep drawing against the rest. The smart banker captures the core of that: playing differently by how many cards you hold.</li>
+        <li>Playing several hands from one deck without reshuffling (card counting).</li>
+      </ul>
+    </details>
+  </div>

@@ -14,8 +14,8 @@
      "banBan": 3,
      "banLuck": 2,
      "triple7": 7,
-     "charlie": 2,
-     "charlie21": 3
+     "dragon": 2,
+     "dragon21": 3
     }
    },
    "fixed": {
@@ -258,8 +258,8 @@
       "name": "Casino habit: hit 16, stand 17+",
       "ev": 0.028295352014226234
      },
-     "charlieHunter": {
-      "name": "Charlie chaser: always hit 4 cards",
+     "dragonChaser": {
+      "name": "Dragon chaser: always hit 4 cards",
       "ev": -0.03229041701630769
      }
     }
@@ -724,8 +724,8 @@
       "evVsEq": -0.03127650542458628,
       "evVsBR": -0.03560380903309811
      },
-     "charlieHunter": {
-      "name": "Charlie chaser: always hit 4 cards",
+     "dragonChaser": {
+      "name": "Dragon chaser: always hit 4 cards",
       "evVsEq": -0.07678430365359147,
       "evVsBR": -0.08037357587563142
      }
@@ -792,7 +792,7 @@
      "4|17|h": 0,
      "4|16|h": 1
     },
-    "charlieHunter": {
+    "dragonChaser": {
      "2|20|h": 0,
      "2|19|h": 0,
      "2|18|h": 0,
@@ -837,8 +837,8 @@
      "banBan": 3,
      "banLuck": 2,
      "triple7": 7,
-     "charlie": 2,
-     "charlie21": 3
+     "dragon": 2,
+     "dragon21": 3
     }
    },
    "fixed": {
@@ -1081,8 +1081,8 @@
       "name": "Casino habit: hit 16, stand 17+",
       "ev": 0.015106141269079859
      },
-     "charlieHunter": {
-      "name": "Charlie chaser: always hit 4 cards",
+     "dragonChaser": {
+      "name": "Dragon chaser: always hit 4 cards",
       "ev": -0.08071614844015008
      }
     }
@@ -1547,8 +1547,8 @@
       "evVsEq": -0.04419861925359912,
       "evVsBR": -0.04851251352729957
      },
-     "charlieHunter": {
-      "name": "Charlie chaser: always hit 4 cards",
+     "dragonChaser": {
+      "name": "Dragon chaser: always hit 4 cards",
       "evVsEq": -0.12481783560489189,
       "evVsBR": -0.12835725440367257
      }
@@ -1615,7 +1615,7 @@
      "4|17|h": 0,
      "4|16|h": 1
     },
-    "charlieHunter": {
+    "dragonChaser": {
      "2|20|h": 0,
      "2|19|h": 0,
      "2|18|h": 0,

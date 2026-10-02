@@ -3,7 +3,7 @@
  * Builds the single-file site from web/template.html:
  *   index.html          full HTML document (GitHub Pages / open locally)
  *   dist/artifact.html  same page without the document skeleton (for Artifact publishing)
- * Inlines js/core.js, web/app.js, web/why.html and the solver / Monte Carlo results.
+ * Inlines js/core.js, web/app.js, web/rules.html, web/why.html and the solver / Monte Carlo results.
  */
 'use strict';
 const fs = require('fs');
@@ -37,13 +37,14 @@ for (const [id, v] of Object.entries(sol.variants)) {
 if (mc) {
   data.mc = { generated: mc.generated, variants: {} };
   for (const [id, runs] of Object.entries(mc.variants))
-    data.mc.variants[id] = runs.map((r) => ({ id: r.id, label: r.label, dealer: r.dealer, hands: r.hands, mean: r4(r.mean), se: r4(r.se), exact: r4(r.exact), z: +r.z.toFixed(2) }));
+    data.mc.variants[id] = runs.map((r) => ({ id: r.id, label: r.label, dealer: r.dealer, hands: r.hands, mean: r4(r.mean), se: r4(r.se), exact: r4(r.exact), z: +r.z.toFixed(2), win: r4(r.win), loss: r4(r.loss), push: r4(r.push) }));
 }
 
 const safe = (s) => s.replace(/<\/(script)/gi, '<\\/$1');
 const core = R('js/core.js');
 let page = R('web/template.html')
-  .replace('<!--WHY-->', R('web/why.html'))
+  .replace('<!--RULES-->', () => R('web/rules.html'))
+  .replace('<!--WHY-->', () => R('web/why.html'))
   .replace('/*__CORE__*/', () => safe(core) + '\nwindow.CORE_SRC = ' + safe(JSON.stringify(core)) + ';')
   .replace('/*__DATA__*/', () => 'window.BL_DATA = ' + safe(JSON.stringify(data)) + ';')
   .replace('/*__APP__*/', () => safe(R('web/app.js')));

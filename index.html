@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600&text=%E4%BA%94%E9%BE%99%E7%A6%8F&display=swap">
 <style>
 /* Layout: a jade card-table felt for play, paper panels for reading; one sticky header with tabs + rule switches. */
 :root {
@@ -28,7 +29,15 @@
   --focus: #c2412d;
   --hit-soft: #f6dcd5;
   --stand-soft: #d5e8f2;
-  --font-display: "Young Serif", "Iowan Old Style", Georgia, serif;
+  --card-red: #b3261e;
+  --card-edge: #cfc6b0;
+  --card-face: #f3e6c0;
+  --back: #9e2f20;
+  --back-line: #c8563f;
+  --on-gold: #ffffff;
+  --seg-b: #8fbcd6;
+  --font-display: "Young Serif", "Noto Serif SC", "Iowan Old Style", Georgia, serif;
+  --font-cjk: "Noto Serif SC", "Songti SC", "SimSun", serif;
   --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --radius: 10px;
@@ -38,14 +47,14 @@
     --bg: #0d1a15; --surface: #13241d; --ink: #e6eee8; --muted: #93a69c; --line: #28403494;
     --felt: #154434; --felt-deep: #0f3328; --felt-ink: #e8f1ea; --card: #f4efe2; --card-ink: #161616;
     --cinnabar: #e0634b; --stand: #3f92c8; --gold: #e2b24a; --win: #4cbf86; --focus: #e0634b;
-    --hit-soft: #3a211c; --stand-soft: #16303f; color-scheme: dark;
+    --hit-soft: #3a211c; --stand-soft: #16303f; --on-gold: #1c1404; --seg-b: #2f6488; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0d1a15; --surface: #13241d; --ink: #e6eee8; --muted: #93a69c; --line: #28403494;
   --felt: #154434; --felt-deep: #0f3328; --felt-ink: #e8f1ea; --card: #f4efe2; --card-ink: #161616;
   --cinnabar: #e0634b; --stand: #3f92c8; --gold: #e2b24a; --win: #4cbf86; --focus: #e0634b;
-  --hit-soft: #3a211c; --stand-soft: #16303f; color-scheme: dark;
+  --hit-soft: #3a211c; --stand-soft: #16303f; --on-gold: #1c1404; --seg-b: #2f6488; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
@@ -197,6 +206,174 @@ table.mini .cell { padding: 4px 2px; font-size: .75rem; }
 .callout { border-left: 3px solid var(--gold); padding: 4px 0 4px 14px; color: var(--ink); }
 .kbd { font-family: var(--font-mono); font-size: .85em; padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
 [role="tabpanel"]:focus { outline: none; }
+
+/* ---- Illustrated cards (SVG, drawn by app.js) ---- */
+.pc { width: var(--cw, 46px); height: auto; aspect-ratio: 60 / 84; display: block; flex: none; color: var(--card-ink); filter: drop-shadow(0 1px 0 rgba(0,0,0,.16)) drop-shadow(0 3px 5px rgba(0,0,0,.14)); }
+.pc .bg { fill: var(--card); stroke: var(--card-edge); stroke-width: 1; }
+.pc.red { color: var(--card-red); }
+.pc .face { fill: var(--card-face); stroke: currentColor; stroke-opacity: .35; stroke-width: .8; }
+.pc .back { fill: var(--back); }
+.pc .lattice { stroke: var(--back-line); stroke-width: 1.2; fill: none; }
+.pc .fu { fill: var(--card); font-family: var(--font-cjk); }
+.pc text { font-family: var(--font-display); fill: currentColor; }
+.pc .q { fill: var(--muted); }
+.pc.blank .bg { stroke-dasharray: 3 2; stroke: var(--muted); }
+.hand-art { display: inline-flex; align-items: flex-end; padding-top: 12px; max-width: 100%; }
+.hand-art:not(.fan) { gap: 6px; flex-wrap: wrap; }
+.hand-art .slot { position: relative; transform: rotate(var(--rot, 0deg)); transform-origin: 50% 110%; }
+.hand-art.fan .slot + .slot { margin-left: calc(var(--cw, 46px) * -0.42); }
+.hand-art.sm { --cw: 30px; padding-top: 4px; }
+.hand-art.lg { --cw: 58px; }
+.slot .tag { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: .7rem; line-height: 1.5; background: var(--gold); color: var(--on-gold); padding: 0 7px; border-radius: 999px; white-space: nowrap; z-index: 1; }
+.slot.hl .pc .bg { stroke: var(--gold); stroke-width: 2.5; }
+.hand .pc { --cw: 68px; animation: drop .28s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .hand .pc { animation: none; } }
+.cjk { font-family: var(--font-cjk); font-weight: 600; letter-spacing: .02em; }
+
+/* ---- Section heads, tokens ---- */
+.sec-head { display: grid; gap: 4px; }
+.sec-head h3 { font-size: 1.3rem; }
+h4 { font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; margin: 0; }
+.tok-row { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.tok { font-family: var(--font-mono); font-size: .8rem; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--gold) 16%, transparent); color: var(--ink); border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); white-space: nowrap; }
+.tok.plain { background: transparent; border-color: var(--line); color: var(--muted); }
+.tok.neg { color: var(--cinnabar); }
+.tok.pos { color: var(--win); }
+.big-total { font-size: 1.6rem; line-height: 1; }
+
+/* ---- Rules: rankings ---- */
+.rank-group { display: grid; gap: 10px; }
+.rank-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.rank { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px 16px; display: grid; gap: 8px; align-content: start; }
+.rank-top { display: flex; align-items: baseline; gap: 10px; }
+.rank .mult { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 500; color: var(--ink); min-width: 2.6ch; }
+.rank.gold .mult { color: var(--gold); }
+.rank.loss .mult { color: var(--cinnabar); }
+.rank .rname { font-family: var(--font-display); font-size: 1.1rem; }
+.rank p { font-size: .88rem; color: var(--muted); }
+.rank .hand-art { --cw: 54px; }
+.m-col .hand-art { --cw: 58px; }
+.rule-art .hand-art { --cw: 50px; }
+.qa-side .hand-art { --cw: 54px; }
+
+/* ---- Rules: Ace flow ---- */
+.ace-flow, .mech-row { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.ace-step, .mech-step { display: grid; gap: 8px; justify-items: start; }
+.ace-cap { display: grid; gap: 2px; }
+.ace-arrow { display: grid; justify-items: center; gap: 2px; color: var(--muted); font-size: .75rem; }
+.ace-arrow svg { width: 48px; height: 20px; }
+@media (max-width: 640px) { .ace-flow, .mech-row { flex-direction: column; align-items: flex-start; } .ace-arrow svg { transform: rotate(90deg); } }
+
+/* ---- Rules: steps ---- */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; counter-reset: step; }
+.steps li { counter-increment: step; display: grid; gap: 6px; align-content: start; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); font-size: .88rem; }
+.steps li b::before { content: counter(step) " · "; font-family: var(--font-mono); color: var(--muted); font-weight: 400; }
+.steps li span:not(.hand-art):not(.slot) { color: var(--muted); }
+@media (max-width: 860px) { .steps { grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); } }
+
+/* ---- Rules: vs tiles ---- */
+.vs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.vs { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.vs-row { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); gap: 4px 10px; align-items: center; font-size: .86rem; }
+.vs-row .who { grid-row: span 2; align-self: start; padding-top: 3px; }
+.vs-row > :nth-child(n+2) { grid-column: 2; justify-self: start; }
+.vs-row .who { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.vs-row.bl .who { color: var(--gold); font-weight: 600; }
+.vs-row.cs > span:last-child { color: var(--muted); }
+.vs-row .hand-art { padding-top: 0; }
+details.more { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px; }
+details.more summary { cursor: pointer; font-weight: 600; }
+details.more[open] summary { margin-bottom: 10px; }
+details.more ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: .9rem; }
+
+/* ---- Why: mantra on felt ---- */
+.mantra { background: radial-gradient(120% 100% at 50% 0%, var(--felt) 0%, var(--felt-deep) 100%); color: var(--felt-ink); border-radius: 18px; padding: 22px; display: grid; gap: 18px; margin-bottom: 34px; box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--felt-deep) 70%, black 30%); }
+.mantra .eyebrow { color: var(--felt-ink); opacity: .75; }
+.mantra-line { font-family: var(--font-display); font-size: clamp(1.4rem, 3.6vw, 2.1rem); line-height: 1.2; text-wrap: balance; }
+.mantra-line b { font-weight: 400; color: #f3d38a; }
+.mantra-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.m-col { display: grid; gap: 8px; justify-items: start; align-content: start; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.07); }
+.m-num { font-family: var(--font-display); font-size: 2.6rem; line-height: 1; color: #f3d38a; }
+.m-cap { font-size: .86rem; opacity: .9; }
+.mantra-foot { font-size: .9rem; opacity: .9; max-width: 70ch; }
+@media (max-width: 640px) { .mantra-grid { grid-template-columns: 1fr; } .m-col { grid-template-columns: auto 1fr; align-items: center; column-gap: 14px; } .m-col .m-cap { grid-column: 1 / -1; } }
+
+/* ---- Why: Q&A ---- */
+.qa { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.qa .sec-head h3 { font-size: 1.45rem; }
+.lede { font-size: 1.05rem; max-width: 70ch; }
+.qa-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 640px) { .qa-grid { grid-template-columns: 1fr; } }
+.qa-side { display: grid; gap: 10px; padding: 14px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--line); align-content: start; }
+.meter { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.meter-fill { height: 100%; border-radius: 999px; }
+.meter-fill.bad { background: var(--cinnabar); }
+.mech { margin: 0; display: grid; gap: 8px; }
+.mech .mech-row { background: var(--bg); }
+.mech figcaption { font-size: .9rem; color: var(--muted); max-width: 70ch; }
+.two-col.tight { gap: 20px; }
+.stack { display: flex; height: 18px; border-radius: 5px; overflow: hidden; gap: 2px; }
+.stack > div { min-width: 2px; }
+.stack-key { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .86rem; }
+.stack-key li { display: flex; align-items: center; gap: 8px; }
+.stack-key i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.stack-key .mono { margin-left: auto; padding-left: 8px; }
+.seg-a { background: var(--stand); } .seg-b { background: var(--seg-b); } .seg-c { background: var(--gold); } .seg-d { background: var(--cinnabar); }
+.seg-win { background: var(--win); } .seg-push { background: var(--muted); opacity: .55; } .seg-lose { background: var(--cinnabar); }
+
+/* ---- Why: rule cards ---- */
+.rule-card { grid-template-columns: minmax(0, 210px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 720px) { .rule-card { grid-template-columns: 1fr; } }
+.rule-art { display: grid; gap: 12px; }
+.rule-art .ex { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 10px; }
+.rule-body { display: grid; gap: 10px; min-width: 0; }
+.chip-bust { font-family: var(--font-mono); font-size: .75rem; color: var(--cinnabar); border: 1px solid currentColor; border-radius: 999px; padding: 0 8px; }
+.chip-bust.safe { color: var(--win); }
+.ev-duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .ev-duo { grid-template-columns: 1fr; } }
+.evbars { display: grid; gap: 5px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-size: .82rem; }
+.evbars .ev-title { font-weight: 600; font-size: .8rem; }
+.evrow { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr) 3.6rem; gap: 8px; align-items: center; }
+.evrow .lab { color: var(--muted); }
+.evrow.best .lab, .evrow.best .val { color: var(--ink); font-weight: 600; }
+.evrow .val { font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.evtrack { position: relative; height: 12px; }
+.evtrack::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+.evbar { position: absolute; top: 0; height: 100%; border-radius: 3px; }
+.evbar.S { background: var(--stand); } .evbar.H { background: var(--cinnabar); }
+.evrow:not(.best) .evbar { opacity: .45; }
+.evbars .ev-note { color: var(--muted); font-size: .76rem; }
+.tells, .diff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.tell, .diff { display: grid; gap: 6px; align-content: start; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); font-size: .88rem; }
+.tell span:last-child, .diff > span:last-child { color: var(--muted); }
+.tips { display: grid; gap: 8px; }
+
+/* ---- Edge panel ---- */
+.edge { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr); gap: 20px; margin-bottom: 24px; align-items: start; }
+@media (max-width: 900px) { .edge { grid-template-columns: 1fr; } }
+.edge-big { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.edge-big .who { font-family: var(--font-display); font-size: 1.4rem; }
+.edge-big .num { font-size: 2.4rem; line-height: 1; }
+table.edge-table td { vertical-align: middle; }
+table.edge-table td.cur { background: color-mix(in srgb, var(--gold) 12%, transparent); }
+.ebar { display: grid; gap: 4px; min-width: 96px; }
+.ebar .track { position: relative; height: 10px; }
+.ebar .track::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+.ebar .bar { position: absolute; top: 0; height: 100%; border-radius: 3px; }
+.ebar .bar.p { background: var(--win); } .ebar .bar.b { background: var(--cinnabar); }
+.ebar .v { font-family: var(--font-mono); font-size: .85rem; white-space: nowrap; }
+.ebar .v small { font-size: .7rem; color: var(--muted); font-family: var(--font-body); margin-left: 4px; }
+
+/* ---- EV dumbbell ---- */
+.dumb-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .dumb-grid { grid-template-columns: 1fr; } }
+.dumb-grid figure { margin: 0; display: grid; gap: 4px; position: relative; align-content: start; }
+.dumb-grid svg { display: block; width: 100%; height: auto; overflow: visible; }
+.dumb-grid .rowhit { fill: transparent; cursor: default; }
+.dumb-grid .rowhit:hover { fill: color-mix(in srgb, var(--ink) 6%, transparent); }
+.cell .evs { display: grid; gap: 1px; margin-top: 3px; font-family: var(--font-mono); font-weight: 400; font-size: .7rem; line-height: 1.25; }
+.cell .evs span { opacity: .8; white-space: nowrap; }
+.cell .evs span.b { opacity: 1; font-weight: 600; }
 </style>
 
 </head>
@@ -287,7 +464,7 @@ table.mini .cell { padding: 4px 2px; font-size: .75rem; }
             <option value="chartSmart">Chart for the smart dealer</option>
             <option value="standAtMin">Stand on 16+ (copy the dealer)</option>
             <option value="casino17">Casino habit: hit 16, stand 17+</option>
-            <option value="charlieHunter">Charlie chaser: always hit 4 cards</option>
+            <option value="dragonChaser">Dragon chaser: always hit 4 cards</option>
           </select>
         </div>
         <div class="field">
@@ -333,17 +510,32 @@ table.mini .cell { padding: 4px 2px; font-size: .75rem; }
     <h2 id="chart-title">Basic strategy</h2>
     <p>The dealer's cards are face down, so there is no upcard column. The decision depends on just three things you can see: your total, how many cards you hold, and whether an Ace is counted high. Under 16 you must hit; at five cards you stop.</p>
   </div>
-  <div class="summary" id="chart-summary"></div>
+  <div class="edge">
+    <div class="box">
+      <div class="eyebrow" id="edge-ctx">Who has the edge?</div>
+      <div class="edge-big"><span class="who" id="edge-who">–</span><span class="num" id="edge-val">–</span></div>
+      <p id="edge-money"></p>
+      <div class="stack" id="edge-wlp" role="img"></div>
+      <ul class="stack-key" id="edge-wlp-key"></ul>
+      <p class="small" id="edge-other"></p>
+    </div>
+    <div class="box">
+      <h3>Edge by strategy</h3>
+      <p class="small">Average result per hand as a share of your bet. Green is the player's edge, red the banker's. The highlighted column is the banker chosen at the top.</p>
+      <div class="scroll"><table class="data edge-table" id="edge-table"></table></div>
+      <p class="small" id="edge-bank"></p>
+    </div>
+  </div>
   <div class="chart-layout">
     <div class="box">
       <div class="scroll"><table class="strat" id="strat"></table></div>
       <div class="legend">
         <span><span class="sw" style="background:var(--cinnabar)"></span>Hit</span>
         <span><span class="sw" style="background:var(--stand)"></span>Stand</span>
-        <span>Pale cell = close call (less than 0.1 units either way)</span>
+        <span>Pale cell = close call</span>
         <span id="legend-mix" hidden><span class="sw" style="outline:2px dashed var(--gold);outline-offset:-2px"></span>Solver mixes; either is fine</span>
       </div>
-      <p class="small">The small number is how much hitting gains (+) or loses (−) compared with standing, in betting units per hand, given you are in that spot.</p>
+      <p class="small">Each cell shows the average result if you <b>H</b>it and if you <b>S</b>tand, in units per hand from that spot (after hitting, you keep following the chart). The better one is in bold. The colour shows the decision; a pale cell means the gap is under 0.1 units.</p>
     </div>
     <div class="side">
       <div class="box">
@@ -354,172 +546,429 @@ table.mini .cell { padding: 4px 2px; font-size: .75rem; }
       </div>
     </div>
   </div>
+  <div class="box" style="margin-top:20px">
+    <h3>EV of hitting vs standing, spot by spot</h3>
+    <p class="small">Each line joins the two choices for one spot. The further apart the dots, the more the decision matters. Hover or tap a row for the numbers.</p>
+    <div class="legend"><span><span class="sw" style="background:var(--cinnabar);border-radius:50%"></span>Hit</span><span><span class="sw" style="background:var(--stand);border-radius:50%"></span>Stand</span><span>Larger dot = the chart's choice</span></div>
+    <div class="dumb-grid" id="dumb"></div>
+  </div>
 </section>
 
 <!-- ============================ RULES ============================ -->
 <section id="rules" role="tabpanel" aria-labelledby="t-rules" tabindex="-1" hidden>
   <div class="panel-intro">
     <h2>The rules we simulate</h2>
-    <p>Banluck is the blackjack Singaporean and Malaysian families play over Chinese New Year. House rules vary from table to table; this is the exact set the solver and simulator use, next to standard casino blackjack.</p>
+    <p>Banluck is the blackjack Singaporean and Malaysian families play over Chinese New Year. House rules vary from table to table. This is the exact set the solver uses.</p>
   </div>
 
+  <!-- Hand rankings, illustrated -->
   <div class="section">
-    <div class="scroll">
-      <table class="data compare">
-        <thead><tr><th>Rule</th><th>Banluck (this lab)</th><th>Casino blackjack (typical)</th></tr></thead>
-        <tbody>
-          <tr><td>Cards</td><td class="diff">1 deck, reshuffled every hand</td><td>6–8 decks in a shoe, reshuffled at a cut card</td></tr>
-          <tr><td>Dealer's cards</td><td class="diff">Both face down. You see only how many cards the banker holds.</td><td>One card face up (the upcard), one face down</td></tr>
-          <tr><td>What the dealer sees</td><td class="diff">How many cards you hold (your cards stay face down)</td><td>Nothing that changes play; dealer follows fixed rules</td></tr>
-          <tr><td>Ace value</td><td class="diff">2 cards: 11 or 10 · 3 cards: 10 or 1 · 4–5 cards: 1</td><td>1 or 11, always</td></tr>
-          <tr><td>Minimum to stand</td><td class="diff">You and the dealer must both reach 16</td><td>None for you; dealer hits to 17</td></tr>
-          <tr><td>Maximum cards</td><td class="diff">5. A fifth card ends your hand.</td><td>No limit</td></tr>
-          <tr><td>Two-card bonus</td><td class="diff">Ban-Ban (A-A) pays 3×, Ban-Luck (A + 10/J/Q/K) pays 2×, both settled straight away. The banker collects them too.</td><td>Blackjack (A + ten) pays 3:2; dealer blackjack wins 1×</td></tr>
-          <tr><td>Other bonuses</td><td class="diff">777 pays 7×. Five-card Charlie (5 cards, 21 or less) pays 2×, or 3× if exactly 21. The banker collects them too.</td><td>None in the base game</td></tr>
-          <tr><td>Both bust</td><td class="diff">Push: nobody wins</td><td>You lose. You busted first. This is the casino's main edge.</td></tr>
-          <tr><td>Five-card bust</td><td class="diff">Switch at the top: lose 1× (normal) or lose 2× (the house rule you play). A double bust is still a push.</td><td>Not applicable</td></tr>
-          <tr><td>Double / split / surrender</td><td class="diff">None</td><td>Double, split pairs, sometimes surrender</td></tr>
-          <tr><td>Strategy depends on</td><td class="diff">Your total, number of cards, and whether an Ace is counted high</td><td>Your total, soft/hard/pair, and the dealer's upcard</td></tr>
-          <tr><td>House edge with best play</td><td class="diff" id="rules-edge">–</td><td>About 0.5% for the casino</td></tr>
-        </tbody>
-      </table>
+    <div class="sec-head">
+      <h3>Hand rankings</h3>
+      <p class="small">A winning hand is paid at its own multiple. A losing hand pays the winner's multiple. The banker collects these bonuses too.</p>
+    </div>
+    <div class="rank-group">
+      <div class="eyebrow">On the deal · shown and settled at once</div>
+      <div class="rank-grid">
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">3×</span><span class="rname">Ban-Ban</span></div>
+          <span class="hand-art fan" data-hand="A♠ A♥"></span>
+          <p>Two Aces. Beats Ban-Luck.</p>
+        </div>
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">2×</span><span class="rname">Ban-Luck</span></div>
+          <span class="hand-art fan" data-hand="A♣ K♦"></span>
+          <p>Ace with 10, J, Q or K.</p>
+        </div>
+      </div>
+    </div>
+    <div class="rank-group">
+      <div class="eyebrow">Finished hands · best first</div>
+      <div class="rank-grid">
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">7×</span><span class="rname">777</span></div>
+          <span class="hand-art fan" data-hand="7♠ 7♥ 7♦"></span>
+          <p>Exactly three 7s. The best finished hand.</p>
+        </div>
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">3×</span><span class="rname"><span class="cjk">五龙</span> 21</span></div>
+          <span class="hand-art fan" data-hand="2♣ 3♦ 4♠ 5♥ 7♣"></span>
+          <p>Five cards totalling exactly 21.</p>
+        </div>
+        <div class="rank gold">
+          <div class="rank-top"><span class="mult">2×</span><span class="rname"><span class="cjk">五龙</span> Five Dragons</span></div>
+          <span class="hand-art fan" data-hand="A♦ 2♠ 3♥ 4♣ 6♦"></span>
+          <p>Five cards, 21 or less. Beats any regular total.</p>
+        </div>
+        <div class="rank">
+          <div class="rank-top"><span class="mult">1×</span><span class="rname">Regular hand</span></div>
+          <span class="hand-art fan" data-hand="10♠ 9♥"></span>
+          <p>16 to 21. Higher total wins; ties push.</p>
+        </div>
+        <div class="rank loss">
+          <div class="rank-top"><span class="mult">−1×</span><span class="rname">Bust</span></div>
+          <span class="hand-art fan" data-hand="K♣ 6♥ 8♠"></span>
+          <p>Over 21. A push if the banker busts too.</p>
+        </div>
+        <div class="rank loss">
+          <div class="rank-top"><span class="mult">−2×</span><span class="rname">Five-card bust</span></div>
+          <span class="hand-art fan" data-hand="3♠ 4♦ 5♣ 2♥ 9♠"></span>
+          <p>Over 21 on your fifth card (the 2× house rule). Still a push if the banker busts.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ace values -->
+  <div class="section">
+    <div class="sec-head">
+      <h3>The Ace shrinks as your hand grows</h3>
+      <p class="small">This is the rule that makes Banluck strategy different from casino blackjack.</p>
+    </div>
+    <figure class="ace-flow" role="img" aria-label="The same Ace counts 11 on two cards, 10 on three cards, and 1 on four cards. The hand goes 17, then 20, then 16.">
+      <div class="ace-step">
+        <span class="hand-art" data-hand="A♠{11} 6♥"></span>
+        <div class="ace-cap"><span class="mono big-total">17</span><span class="small">2 cards: Ace is 11 (or 10)</span></div>
+      </div>
+      <div class="ace-arrow" aria-hidden="true"><svg viewBox="0 0 48 20"><path d="M2 10H40M33 3l8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>draw a 4</span></div>
+      <div class="ace-step">
+        <span class="hand-art" data-hand="A♠{10} 6♥ 4♣"></span>
+        <div class="ace-cap"><span class="mono big-total">20</span><span class="small">3 cards: Ace is 10 (or 1)</span></div>
+      </div>
+      <div class="ace-arrow" aria-hidden="true"><svg viewBox="0 0 48 20"><path d="M2 10H40M33 3l8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>draw a 5</span></div>
+      <div class="ace-step">
+        <span class="hand-art" data-hand="A♠{1} 6♥ 4♣ 5♦"></span>
+        <div class="ace-cap"><span class="mono big-total">16</span><span class="small">4–5 cards: Ace is 1</span></div>
+      </div>
+    </figure>
+    <p class="small">You drew a 5 and your total went <em>down</em> from 20 to 16. That never happens in a casino.</p>
+  </div>
+
+  <!-- Order of play -->
+  <div class="section">
+    <div class="sec-head"><h3>One hand, start to finish</h3></div>
+    <ol class="steps">
+      <li><span class="hand-art sm fan" data-hand="XX XX"></span><b>Deal</b><span>Two cards each, all face down.</span></li>
+      <li><span class="hand-art sm fan" data-hand="A♥ Q♠"></span><b>Bonus check</b><span>Ban-Ban or Ban-Luck is shown and paid. The hand ends.</span></li>
+      <li><span class="hand-art sm fan" data-hand="XX XX XX"></span><b>You draw</b><span>Hit to at least 16, then hit or stand. Five cards max. Bust in silence.</span></li>
+      <li><span class="hand-art sm fan" data-hand="XX XX XX XX"></span><b>Banker draws</b><span>Sees only how many cards you hold. Must also reach 16.</span></li>
+      <li><span class="hand-art sm fan" data-hand="10♦ 9♣"></span><b>Reveal</b><span>Both hands flip and settle on the rankings above.</span></li>
+    </ol>
+  </div>
+
+  <!-- Banluck vs casino -->
+  <div class="section">
+    <div class="sec-head">
+      <h3>Banluck vs casino blackjack</h3>
+      <p class="small">Gold marks where Banluck differs.</p>
+    </div>
+    <div class="vs-grid">
+      <div class="vs">
+        <div class="eyebrow">Dealer's cards</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="hand-art sm" data-hand="XX XX"></span><span>Both face down. You see nothing.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="hand-art sm" data-hand="K♠ XX"></span><span>One upcard to plan around.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Ace value</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">11/10</span><span class="tok">10/1</span><span class="tok">1</span></span><span>Depends on 2, 3 or 4+ cards.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">1 or 11</span></span><span>Always your choice.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Both bust</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">Push</span></span><span>Nobody wins. Busting is cheaper.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain neg">You lose</span></span><span>You busted first. This is the casino's edge.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Must reach</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">16</span></span><span>You and the banker both.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">17</span></span><span>The dealer only. You can stand on anything.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Card limit</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="hand-art sm fan" data-hand="XX XX XX XX XX"></span><span>Five. <span class="cjk">五龙</span> pays 2×.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">∞</span></span><span>Draw as many as you like.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Bonuses</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">3×</span><span class="tok">2×</span><span class="tok">7×</span></span><span>Ban-Ban, Ban-Luck, 777, <span class="cjk">五龙</span>. The banker gets them too.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">3:2</span></span><span>Blackjack only.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Cards in play</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">1 deck</span></span><span>Reshuffled every hand.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">6–8 decks</span></span><span>Dealt from a shoe.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Your choices</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok">Hit</span><span class="tok">Stand</span></span><span>That's all.</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain">+ Double</span><span class="tok plain">Split</span></span><span>Sometimes surrender too.</span></div>
+      </div>
+      <div class="vs">
+        <div class="eyebrow">Edge with best play</div>
+        <div class="vs-row bl"><span class="who">Banluck</span><span class="tok-row"><span class="tok" id="rules-edge-tok">–</span></span><span id="rules-edge">–</span></div>
+        <div class="vs-row cs"><span class="who">Casino</span><span class="tok-row"><span class="tok plain neg">−0.5%</span></span><span>The casino always keeps an edge.</span></div>
+      </div>
     </div>
   </div>
 
   <div class="two-col">
-    <div class="section">
-      <h3>Payout ladder</h3>
-      <p class="small">Higher beats lower. A hand that wins is paid at its own rung; a hand that loses pays the winner's rung. Same rung is a push, except regular totals, which compare.</p>
-      <div class="ladder">
-        <div class="rung"><span class="mult">3×</span><span><strong>Ban-Ban</strong>: two Aces on the deal. Settled immediately; beats Ban-Luck.</span></div>
-        <div class="rung"><span class="mult">2×</span><span><strong>Ban-Luck</strong>: Ace + 10, J, Q or K on the deal. Settled immediately.</span></div>
-        <div class="rung"><span class="mult">7×</span><span><strong>777</strong>: exactly three 7s. Best finished hand.</span></div>
-        <div class="rung"><span class="mult">3×</span><span><strong>Five-card 21</strong>: five cards totalling exactly 21.</span></div>
-        <div class="rung"><span class="mult">2×</span><span><strong>Five-card Charlie</strong>: five cards, 21 or less. Beats any regular total.</span></div>
-        <div class="rung"><span class="mult">1×</span><span><strong>Regular hand</strong>: 16 to 21; higher total wins, ties push.</span></div>
-        <div class="rung loss"><span class="mult">−1×</span><span><strong>Bust</strong>: over 21. Push if the banker also busts.</span></div>
-        <div class="rung loss"><span class="mult">−2×</span><span><strong>Five-card bust</strong> (2× variant): over 21 on your fifth card. Push if the banker also busts.</span></div>
-      </div>
-    </div>
-    <div class="section prose">
-      <h3>Order of play (heads-up)</h3>
-      <ol>
-        <li>Two cards each, all face down.</li>
-        <li>Any Ban-Ban or Ban-Luck is shown and settled at once. If either side had one, the hand is over.</li>
-        <li>You hit until you reach at least 16, then hit or stand as you like, up to five cards. If you bust you keep quiet; your cards stay down.</li>
-        <li>The banker plays, knowing only how many cards you hold. The banker must also reach 16, up to five cards.</li>
-        <li>Both hands are revealed and settled on the ladder.</li>
-      </ol>
-      <h3>Parameters fixed for the solver</h3>
+    <details class="more">
+      <summary>Settings fixed for the solver</summary>
       <ul>
-        <li>One player against the banker; 1-unit bets.</li>
-        <li>Fresh 52-card deck each hand, so card removal is exact.</li>
-        <li><strong>Fixed dealer:</strong> hits below 16, stands on any 16+, no matter what you hold.</li>
-        <li><strong>Smart dealer:</strong> sees your card count and picks the play that hurts you most. Solved as a two-player game with CFR+, until neither side can gain more than 0.002% per hand.</li>
-        <li>The five-card bust penalty applies to the player only. A banker who busts on five cards pays the normal amount.</li>
-        <li>Your strategy uses only your own cards; it never assumes you know what the banker holds.</li>
+        <li>One player against the banker, 1-unit bets.</li>
+        <li>A fresh 52-card deck every hand, so card-removal odds are exact.</li>
+        <li><b>Fixed banker:</b> hits below 16, stands on any 16 or more.</li>
+        <li><b>Smart banker:</b> sees your card count and plays to hurt you most. Solved as a two-player game with CFR+, to within 0.002% per hand.</li>
+        <li>The five-card bust penalty is for players only. A banker who busts on five cards pays 1×.</li>
+        <li>Your strategy uses only your own cards.</li>
       </ul>
-      <h3>Not modelled</h3>
+    </details>
+    <details class="more">
+      <summary>Not modelled</summary>
       <ul>
-        <li>Several players at one table. In a real game the banker can reveal some players at 16 or 17, then keep drawing against the rest. The smart dealer here captures the core of that edge: playing differently depending on how many cards you hold.</li>
-        <li>Running a deck through several hands without reshuffling (card counting).</li>
+        <li>Several players at one table. A real banker can reveal some players at 16 or 17, then keep drawing against the rest. The smart banker captures the core of that: playing differently by how many cards you hold.</li>
+        <li>Playing several hands from one deck without reshuffling (card counting).</li>
       </ul>
-    </div>
+    </details>
   </div>
+
 </section>
 
 <!-- ============================ WHY ============================ -->
 <section id="why" role="tabpanel" aria-labelledby="t-why" tabindex="-1" hidden>
     <div class="panel-intro">
     <h2>Why the strategy works</h2>
-    <p>The whole chart fits in a few rules. Each one comes with the reason behind it, so you can rebuild the chart at the table without memorising a grid.</p>
+    <p>The whole chart fits in one line and five short rules. Each comes with the reason, so you can rebuild it at the table without memorising a grid.</p>
   </div>
 
-  <div class="two-col">
-    <div class="section">
-      <div class="rule-card">
-        <span class="eyebrow">The one line to remember</span>
-        <p class="rule">Stand on <strong>hard 17</strong>, on <strong>19 with two cards and an Ace</strong>, and on <strong>20 with three cards and an Ace</strong>. Hit everything below.</p>
-        <p class="small">Say it as “17 · 19 · 20”. It is the complete chart for your house rules (five-card bust loses 2×) against a fixed dealer, and it gains about <span data-num="bust2.fixed.chartEV">+2.6%</span> per hand. Copying the dealer and standing on 16 loses <span data-num="bust2.fixed.baselines.standAtMin.ev">−0.7%</span>.</p>
+  <!-- The mantra, on felt -->
+  <div class="mantra">
+    <div class="mantra-head">
+      <span class="eyebrow">The one line to remember</span>
+      <p class="mantra-line">Stand from <b>17</b> · <b>19</b> · <b>20</b>. Hit everything below.</p>
+    </div>
+    <div class="mantra-grid">
+      <div class="m-col">
+        <span class="m-num">17</span>
+        <span class="hand-art fan" data-hand="10♣ 7♦"></span>
+        <span class="m-cap">Any hard hand: no Ace, or the Ace counts 1</span>
+      </div>
+      <div class="m-col">
+        <span class="m-num">19</span>
+        <span class="hand-art fan" data-hand="A♠ 8♥"></span>
+        <span class="m-cap">Two cards with an Ace counted 11</span>
+      </div>
+      <div class="m-col">
+        <span class="m-num">20</span>
+        <span class="hand-art fan" data-hand="A♦ 4♣ 5♠"></span>
+        <span class="m-cap">Three cards with an Ace counted 10</span>
       </div>
     </div>
-    <div class="section prose">
-      <h3>First, what “Ace counted high” means</h3>
-      <p>In Banluck an Ace changes value with the number of cards: 11 (or 10) on two cards, 10 (or 1) on three, and only 1 on four or five. Your hand is <em>Ace-high</em> when you are counting the Ace as 11 on two cards or as 10 on three. Everything else is a hard hand.</p>
-      <p>A-6 is 17 on two cards. Draw a 4 and the Ace can no longer be 11: it becomes 10 or 1, so you hold 20 (10 + 6 + 4). Draw a 9 instead and it is 16 (1 + 6 + 9). Totals can go down when you draw, which never happens in a casino.</p>
+    <p class="mantra-foot">This is the complete chart for the 2× five-card bust rule against a fixed banker. It wins about <span data-num="bust2.fixed.chartEV">+2.6%</span> per hand. Copying the dealer and standing on 16 loses <span data-num="bust2.fixed.baselines.standAtMin.ev">−0.7%</span>.</p>
+  </div>
+
+  <!-- The big question -->
+  <div class="section qa">
+    <div class="sec-head">
+      <span class="eyebrow">The question everyone asks</span>
+      <h3>“Hitting 16 to 19? Surely the bust risk is huge.”</h3>
+    </div>
+    <p class="lede">We never hit a <b>hard</b> 17, 18 or 19. Like a casino player, you stand on those. The “hit 16 to 19” rule is only for <b>three cards with an Ace counted as 10</b>, and there the next card <b>cannot bust you</b>.</p>
+
+    <div class="qa-grid">
+      <div class="qa-side">
+        <div class="eyebrow">Hard 17</div>
+        <span class="hand-art fan" data-hand="10♠ 7♥"></span>
+        <div class="meter" aria-label="Bust chance on the next card: 68%"><div class="meter-fill bad" style="width:68%"></div></div>
+        <p><span class="mono">68%</span> chance the next card busts you. <span class="pill stand">Stand</span></p>
+      </div>
+      <div class="qa-side">
+        <div class="eyebrow">Three cards, Ace counted 10, total 19</div>
+        <span class="hand-art fan" data-hand="A♣ 4♥ 5♦"></span>
+        <div class="meter" aria-label="Bust chance on the next card: 0%"><div class="meter-fill bad" style="width:0%"></div></div>
+        <p><span class="mono">0%</span> chance the next card busts you. <span class="pill hit">Hit</span></p>
+      </div>
+    </div>
+
+    <figure class="mech">
+      <div class="mech-row" role="img" aria-label="A, 4, 5 is 19 with the Ace as 10. Draw any card and the Ace drops to 1, so the hand becomes 10 plus the new card: between 11 and 20.">
+        <div class="mech-step">
+          <span class="hand-art" data-hand="A♣{10} 4♥ 5♦"></span>
+          <span class="mono big-total">19</span>
+        </div>
+        <div class="ace-arrow"><svg viewBox="0 0 48 20" aria-hidden="true"><path d="M2 10H40M33 3l8 7-8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>draw any card</span></div>
+        <div class="mech-step">
+          <span class="hand-art" data-hand="A♣{1} 4♥ 5♦ ??"></span>
+          <span class="mono big-total">10 + ?</span>
+        </div>
+      </div>
+      <figcaption>On the fourth card the Ace drops from 10 to 1. That loses 9, and the biggest card you can draw adds 10. So you land between 11 and 20, never over.</figcaption>
+    </figure>
+
+    <div class="two-col tight">
+      <div class="prose">
+        <h4>So why not stand on 19?</h4>
+        <p>Because the hit is free and the hand gets a shot at <span class="cjk">五龙</span>. After the hit, with the 2× rule against a fixed banker:</p>
+        <div class="stack" role="img" aria-label="After hitting: 32.5% end on four-card 20 or 21, 23.8% on four-card 17 to 19, 25.1% make Five Dragons, 18.7% go on to a five-card bust.">
+          <div class="seg-a" style="flex:32.5"></div><div class="seg-b" style="flex:23.8"></div><div class="seg-c" style="flex:25.1"></div><div class="seg-d" style="flex:18.7"></div>
+        </div>
+        <ul class="stack-key">
+          <li><i class="seg-a"></i>Four-card 20 or 21 <span class="mono">32.5%</span></li>
+          <li><i class="seg-b"></i>Four-card 17 to 19 <span class="mono">23.8%</span></li>
+          <li><i class="seg-c"></i><span class="cjk">五龙</span>, paid 2× or 3× <span class="mono">25.1%</span></li>
+          <li><i class="seg-d"></i>Five-card bust <span class="mono">18.7%</span></li>
+        </ul>
+        <p class="small">The only bust risk comes later, if you land on 11 to 16 and need a fifth card. Even then the fifth card makes <span class="cjk">五龙</span> more often than it busts.</p>
+      </div>
+      <div class="prose">
+        <h4>The average result from that spot</h4>
+        <div class="evbars" data-ev="3|19|s"></div>
+        <p class="small">Units per hand, from the solver, for the rule and banker chosen at the top. The bars update when you flip the switches.</p>
+      </div>
     </div>
   </div>
 
+  <!-- The five rules -->
   <div class="section">
-    <h3>The rules, one at a time</h3>
+    <div class="sec-head"><h3>The five rules</h3></div>
     <div class="rule-list">
-      <div class="rule-card">
-        <span class="idx">Rule 1 · forced</span>
-        <p class="rule">Under 16, you <em>hit</em>. No choice.</p>
-        <p>The table rule says you cannot stand below 16. That includes 7-7: it is 14, so you draw anyway and hope for the third 7 that pays 7×.</p>
-      </div>
-      <div class="rule-card">
-        <span class="idx">Rule 2 · hard hands</span>
-        <p class="rule"><em>Hit</em> hard 16. <strong>Stand</strong> on hard 17 or more.</p>
-        <p><b>Why hit 16:</b> the banker also has to reach 16, so your 16 can never beat a banker who stands. At best it ties another 16. It only wins when the banker busts. And if you bust going for more, a banker bust still saves you, because two busts is a push. In a casino your bust loses no matter what, which is why casino players often stand on 16.</p>
-        <p><b>Why stop at 17:</b> from 17, any 5 or higher busts you. That is about 7 cards in 10. A 17 already beats every banker who stops on 16.</p>
-      </div>
-      <div class="rule-card">
-        <span class="idx">Rule 3 · two cards with an Ace</span>
-        <p class="rule">A-5, A-6, A-7: <em>hit</em>. A-8, A-9: <strong>stand</strong>.</p>
-        <p><b>Why it's safe to hit:</b> the third card can't bust you. Once you draw, the Ace drops to 10 or 1, and the lower value always keeps you at 20 or under. So hitting A-7 (18) is a free chance to improve.</p>
-        <p><b>Why stand on A-8:</b> 19 is already a strong hand. The free draw from 19 more often makes you worse than better, because the Ace usually falls from 11 to 1.</p>
-      </div>
-      <div class="rule-card">
-        <span class="idx">Rule 4 · three cards with an Ace counted as 10</span>
-        <p class="rule">Total 16 to 19: <em>hit</em>. Total 20 or 21: <strong>stand</strong>.</p>
-        <p><b>Why:</b> same trick as Rule 3. On the fourth card the Ace becomes 1, and from 20 or less you can't go over 21. You also move one card closer to a Five-card Charlie (2×). This is the biggest edge on the chart: hitting an Ace-high 16 on three cards is worth about a full unit more than standing.</p>
-      </div>
-      <div class="rule-card">
-        <span class="idx">Rule 5 · four cards</span>
-        <p class="rule">Four cards and hard 16: <em>hit</em> for the Charlie. 17 or more: <strong>stand</strong>.</p>
-        <p><b>Why:</b> one more card that keeps you at 21 or under pays double. From 16, five cards in thirteen (A to 5) do that. Under your house rule a five-card bust costs 2×, so 17 is not worth the risk. With normal bust rules (switch at the top) you should hit four-card 17 as well.</p>
-      </div>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="7♠ 7♥"></span><span class="pill forced">Must hit</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 1 · forced</span>
+          <p class="rule">Under 16, you <em>hit</em>. No choice.</p>
+          <p>The table won't let you stand below 16. Even 7-7 draws, and the third 7 pays 7×.</p>
+        </div>
+      </article>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="10♠ 6♥"></span><span class="pill hit">Hit</span><span class="chip-bust">60% bust</span></div>
+          <div class="ex"><span class="hand-art fan" data-hand="10♦ 7♣"></span><span class="pill stand">Stand</span><span class="chip-bust">68% bust</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 2 · hard hands</span>
+          <p class="rule"><em>Hit</em> hard 16. <strong>Stand</strong> on hard 17 or more.</p>
+          <p><b>Why hit 16 at 60% bust?</b> The banker must also reach 16, so a standing 16 can only win when the banker busts. Here is how a fixed banker finishes:</p>
+          <div class="stack" role="img" aria-label="Fixed banker finishes: busts 21.0%, stops on 16 14.4%, ends on 17 or better 64.6%.">
+            <div class="seg-win" style="flex:21"></div><div class="seg-push" style="flex:14.4"></div><div class="seg-lose" style="flex:64.6"></div>
+          </div>
+          <ul class="stack-key">
+            <li><i class="seg-win"></i>Banker busts <span class="mono">21.0%</span>: your 16 wins</li>
+            <li><i class="seg-push"></i>Banker stops on 16 <span class="mono">14.4%</span>: push</li>
+            <li><i class="seg-lose"></i>Banker makes 17 or better <span class="mono">64.6%</span>: your 16 loses</li>
+          </ul>
+          <p>A standing 16 loses two hands in three. Hitting gives you a 40% shot at 17 to 21, and when you bust, the banker's 21% bust chance still turns it into a push.</p>
+          <p><b>Why stop at 17?</b> A 17 already beats every banker who stops on 16, and 7 cards in 10 would bust it.</p>
+          <div class="ev-duo">
+            <div class="evbars" data-ev="2|16|h"></div>
+            <div class="evbars" data-ev="2|17|h"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="A♥ 7♠"></span><span class="pill hit">Hit</span><span class="chip-bust safe">0% bust</span></div>
+          <div class="ex"><span class="hand-art fan" data-hand="A♦ 8♣"></span><span class="pill stand">Stand</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 3 · two cards with an Ace</span>
+          <p class="rule">A-5, A-6, A-7: <em>hit</em>. A-8, A-9: <strong>stand</strong>.</p>
+          <p><b>Why hit A-7 (18)?</b> The third card can't bust you. The Ace drops from 11 to 10 or 1, and the lower value always keeps you at 21 or under.</p>
+          <p><b>Why stand on A-8 (19)?</b> 19 is already strong. A draw from 19 makes you worse more often than better.</p>
+          <div class="ev-duo">
+            <div class="evbars" data-ev="2|18|s"></div>
+            <div class="evbars" data-ev="2|19|s"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="A♣ 4♥ 5♦"></span><span class="pill hit">Hit</span><span class="chip-bust safe">0% bust</span></div>
+          <div class="ex"><span class="hand-art fan" data-hand="A♠ 4♦ 6♣"></span><span class="pill stand">Stand</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 4 · three cards, Ace counted as 10</span>
+          <p class="rule">Total 16 to 19: <em>hit</em>. Total 20 or 21: <strong>stand</strong>.</p>
+          <p><b>Why:</b> the same free draw as Rule 3, explained above. The fourth card turns the Ace into a 1, so you can't go over 21, and you move one card from <span class="cjk">五龙</span>. At 20 the hand is too good to give up.</p>
+          <div class="ev-duo">
+            <div class="evbars" data-ev="3|19|s"></div>
+            <div class="evbars" data-ev="3|20|s"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="rule-card">
+        <div class="rule-art">
+          <div class="ex"><span class="hand-art fan" data-hand="3♠ 4♥ 2♦ 7♣"></span><span class="pill hit">Hit</span><span class="chip-bust">65% bust</span></div>
+        </div>
+        <div class="rule-body">
+          <span class="idx">Rule 5 · four cards</span>
+          <p class="rule">Four cards and hard 16: <em>hit</em> for <span class="cjk">五龙</span>. 17 or more: <strong>stand</strong>.</p>
+          <p><b>Why:</b> a standing 16 only wins when the banker busts. Any Ace to 5 makes <span class="cjk">五龙</span>, paid 2×. With the 2× bust rule, 17 is not worth the risk. With the normal 1× rule (switch at the top), hit four-card 17 too.</p>
+          <div class="ev-duo">
+            <div class="evbars" data-ev="4|16|h"></div>
+            <div class="evbars" data-ev="4|17|h"></div>
+          </div>
+        </div>
+      </article>
     </div>
   </div>
 
-  <div class="two-col">
-    <div class="section prose">
+  <!-- Smart banker -->
+  <div class="section">
+    <div class="sec-head">
       <h3>Against a smart banker</h3>
-      <p>Your cards are face down, but the banker can count them. Two cards and standing means you have 16 to 20. Five cards means you have either a Charlie or a five-card bust. A good banker uses that.</p>
-      <p>Change one thing: <strong>stand on a two-card hard 16</strong> most of the time. The solver hits it about one time in four, at random. If you always hit 16, then every two-card stand would show 17 or more, and the banker could hit 17 against you with no risk. Standing on some 16s keeps the banker guessing. The rest of the chart stays the same. (With normal bust rules, also hit three cards with an Ace counted as 10 on a total of 20.)</p>
-      <p>The banker's information is worth a lot. With best play you lose about <span data-num="bust2.smart.value" data-dp="1">−3.1%</span> per hand against a smart banker, compared with <span data-num="bust2.fixed.chartEV">+2.6%</span> against a fixed one. In Banluck the edge belongs to whoever plays the bank well, so take the bank when it comes round.</p>
+      <p class="small">Your cards are face down, but the banker can count them.</p>
     </div>
-    <div class="section prose">
-      <h3>When you hold the bank</h3>
-      <ul>
-        <li><b>Against a player who stood on two cards:</b> with two cards of your own, hit 17 most of the time (about 70%). A two-card stand usually means 17 to 20, so your 17 rarely wins.</li>
-        <li><b>Four-card hands of your own:</b> against players holding two to four cards, hit 16 and 17 to chase the Charlie. The five-card bust penalty applies only to players, so a bust costs you just 1×.</li>
-        <li><b>Five-card players (2× rule):</b> stand on any hard 16 or more, and on two-card Ace hands too. They hold a Charlie, which beats you anyway, or a five-card bust that pays you 2× unless you also bust. Don't risk busting.</li>
-        <li><b>Ace counted high:</b> hit up to 18 on two cards and up to 19 on three (up to 20 against three- or four-card players), because the next card can't bust you.</li>
-      </ul>
-      <p class="small">The full banker tables are on the Strategy chart tab.</p>
+    <div class="tells">
+      <div class="tell"><span class="hand-art sm fan" data-hand="XX XX"></span><b>Two cards, standing</b><span>You hold 16 to 20.</span></div>
+      <div class="tell"><span class="hand-art sm fan" data-hand="XX XX XX"></span><b>Three cards</b><span>You drew once: usually 17 to 21, or a silent bust.</span></div>
+      <div class="tell"><span class="hand-art sm fan" data-hand="XX XX XX XX XX"></span><b>Five cards</b><span><span class="cjk">五龙</span> or a five-card bust. Nothing in between.</span></div>
+    </div>
+    <div class="two-col">
+      <div class="prose">
+        <h4>Change one thing</h4>
+        <p><strong>Stand on a two-card hard 16</strong> most of the time. The solver hits it about one time in four, at random. If you always hit 16, every two-card stand would show 17 or more, and the banker could hit 17 against you safely.</p>
+        <p>With best play you lose about <span data-num="bust2.smart.value" data-dp="1">−3.1%</span> per hand against a smart banker, against <span data-num="bust2.fixed.chartEV">+2.6%</span> against a fixed one. The banker's information decides the game, so take the bank when it comes round.</p>
+      </div>
+      <div class="prose">
+        <h4>When you hold the bank</h4>
+        <ul class="tips">
+          <li><b>Player stood on two cards:</b> with your own two-card 17, hit about 70% of the time. Their stand usually means 17 to 20.</li>
+          <li><b>Your four-card 16 or 17:</b> hit against players holding two to four cards. Your five-card bust only costs 1×.</li>
+          <li><b>Five-card players (2× rule):</b> stand on any hard 16 or more. They hold <span class="cjk">五龙</span>, which beats you anyway, or a bust that pays you 2× unless you bust too.</li>
+          <li><b>Ace counted high:</b> hit up to 18 on two cards and up to 19 on three, because the next card can't bust you.</li>
+        </ul>
+        <p class="small">The full banker tables are on the Strategy chart tab.</p>
+      </div>
     </div>
   </div>
 
-  <div class="two-col">
-    <div class="section prose">
-      <h3>How this differs from casino basic strategy</h3>
-      <ul>
-        <li><b>No upcard, so no columns.</b> A casino chart has ten dealer columns. In Banluck you see nothing of the banker's hand, so your hand alone decides.</li>
-        <li><b>Busting is cheaper.</b> In a casino you lose the moment you bust. Here a banker bust turns your bust into a push. That is why 16 becomes a hit.</li>
-        <li><b>Aces work differently.</b> A casino Ace stays 11 until that would bust you. A Banluck Ace drops in value just because you drew another card, so Ace-high hands get free draws that can't bust.</li>
-        <li><b>Bonuses reward card count.</b> The Charlie and 777 pay by number of cards, not just total, which pulls you towards drawing.</li>
-        <li><b>No doubling or splitting.</b> Hit and stand are the only choices.</li>
-      </ul>
-    </div>
-    <div class="section prose">
-      <h3>How these numbers were made</h3>
-      <p><b>Exact solve.</b> All 2,983 possible hands of two to five cards from one deck were enumerated, with exact card-removal odds. Against the fixed dealer, the best play for every hand comes from working backwards from five cards. Against the smart dealer it is a two-player game, solved with CFR+ until neither side could gain more than 0.002% per hand by changing strategy.</p>
-      <p><b>Monte Carlo check.</b> 20 million real shuffled hands per matchup landed within about two standard errors of the exact values every time. Run your own on the Play tab.</p>
-      <p><b>Why it's fast.</b> Against a fixed dealer this is a one-player problem: each of the 2,983 hands is evaluated once, working backwards, in under a second. Poker and liar's dice need CFR running over millions or billions of situations, because both sides hide information and adapt. The smart-dealer version of Banluck is that kind of game too, but small enough to solve in about two and a half minutes on a laptop-class CPU.</p>
+  <!-- Casino contrast -->
+  <div class="section">
+    <div class="sec-head"><h3>Why this isn't casino basic strategy</h3></div>
+    <div class="diff-grid">
+      <div class="diff"><span class="hand-art sm" data-hand="XX XX"></span><b>No upcard</b><span>A casino chart has ten dealer columns. Here your own hand decides everything.</span></div>
+      <div class="diff"><span class="tok-row"><span class="tok">Bust + bust = push</span></span><b>Busting is cheaper</b><span>A banker bust rescues your bust. That is why hard 16 becomes a hit.</span></div>
+      <div class="diff"><span class="tok-row"><span class="tok">11/10</span><span class="tok">10/1</span><span class="tok">1</span></span><b>Aces shrink</b><span>Drawing lowers the Ace, so Ace-high hands get draws that can't bust.</span></div>
+      <div class="diff"><span class="hand-art sm fan" data-hand="A♦ 2♠ 3♥ 4♣ 6♦"></span><b>Card count pays</b><span><span class="cjk">五龙</span> and 777 pay by number of cards, which pulls you towards drawing.</span></div>
     </div>
   </div>
+
+  <details class="more">
+    <summary>How these numbers were made</summary>
+    <div class="prose">
+      <p><b>Exact solve.</b> All 2,983 possible hands of two to five cards from one deck were enumerated with exact card-removal odds. Against the fixed banker, the best play for every hand comes from working backwards from five cards. Against the smart banker it is a two-player game, solved with CFR+ until neither side could gain more than 0.002% per hand.</p>
+      <p><b>Monte Carlo check.</b> 20 million shuffled hands per matchup landed within about two standard errors of the exact values every time. The bust chances and outcome splits on this page come from 3 to 6 million simulated hands each. Run your own on the Play tab.</p>
+      <p><b>Why it's fast.</b> Against a fixed banker this is a one-player problem, solved in under a second. Poker and liar's dice need CFR over millions or billions of situations because both sides hide information. The smart-banker version of Banluck is that kind of game too, but small enough to solve in about two and a half minutes.</p>
+    </div>
+  </details>
 
 </section>
 
@@ -545,7 +994,7 @@ table.mini .cell { padding: 4px 2px; font-size: .75rem; }
     maxCards: 5,
     bothBustPush: true,
     fiveCardBustMult: 2, // 1 = normal bust, 2 = a 5-card bust loses double (player only)
-    pay: Object.freeze({ banBan: 3, banLuck: 2, triple7: 7, charlie: 2, charlie21: 3 }),
+    pay: Object.freeze({ banBan: 3, banLuck: 2, triple7: 7, dragon: 2, dragon21: 3 }),
   });
 
   function rulesWith(overrides) {
@@ -597,8 +1046,8 @@ table.mini .cell { padding: 4px 2px; font-size: .75rem; }
     return null;
   }
 
-  // Final-hand tiers, best first: 777 > 5-card 21 > 5-card Charlie > regular.
-  const TIER = { BUST: -1, REGULAR: 0, CHARLIE: 1, CHARLIE21: 2, TRIPLE7: 3 };
+  // Final-hand tiers, best first: 777 > 五龙 21 > 五龙 (Five Dragons) > regular.
+  const TIER = { BUST: -1, REGULAR: 0, DRAGON: 1, DRAGON21: 2, TRIPLE7: 3 };
 
   /** Full evaluation of a final (or in-progress) hand. */
   function evaluate(cards, rules) {
@@ -614,8 +1063,8 @@ table.mini .cell { padding: 4px 2px; font-size: .75rem; }
     } else if (s.n === 3 && s.sevens === 3) {
       tier = TIER.TRIPLE7; mult = rules.pay.triple7; label = '777';
     } else if (s.n === 5) {
-      if (v.total === 21) { tier = TIER.CHARLIE21; mult = rules.pay.charlie21; label = 'Five-card 21'; }
-      else { tier = TIER.CHARLIE; mult = rules.pay.charlie; label = 'Five-card Charlie'; }
+      if (v.total === 21) { tier = TIER.DRAGON21; mult = rules.pay.dragon21; label = 'Five Dragons 21'; }
+      else { tier = TIER.DRAGON; mult = rules.pay.dragon; label = 'Five Dragons'; }
     }
     // A hand must stop when bust, at 5 cards, or on 777.
     const terminal = bust || s.n >= 5 || tier === TIER.TRIPLE7;
@@ -800,8 +1249,8 @@ table.mini .cell { padding: 4px 2px; font-size: .75rem; }
   };
 });
 
-window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlement, dealing and\n * hand simulation. Shared by the browser page and the Node solvers.\n *\n * Ranks are encoded 1..10 (1 = Ace, 10 = any ten-value card: 10/J/Q/K).\n */\n(function (root, factory) {\n  if (typeof module === 'object' && module.exports) module.exports = factory();\n  else root.BanluckCore = factory();\n})(typeof self !== 'undefined' ? self : this, function () {\n  'use strict';\n\n  const DEFAULT_RULES = Object.freeze({\n    decks: 1,\n    playerMinStand: 16,\n    dealerMinStand: 16,\n    maxCards: 5,\n    bothBustPush: true,\n    fiveCardBustMult: 2, // 1 = normal bust, 2 = a 5-card bust loses double (player only)\n    pay: Object.freeze({ banBan: 3, banLuck: 2, triple7: 7, charlie: 2, charlie21: 3 }),\n  });\n\n  function rulesWith(overrides) {\n    const r = Object.assign({}, DEFAULT_RULES, overrides || {});\n    r.pay = Object.assign({}, DEFAULT_RULES.pay, (overrides && overrides.pay) || {});\n    return r;\n  }\n\n  // ---- Hand values ---------------------------------------------------------\n  // Ace values depend on how many cards are held:\n  //   2 cards: Ace = 11 or 10      3 cards: Ace = 10 or 1      4-5 cards: Ace = 1\n  // The best total is the highest one that does not exceed 21.\n\n  /** Evaluate from summary counts: n cards, hard sum (Aces as 1), number of Aces. */\n  function valueFrom(n, hard, aces) {\n    if (aces === 0 || n >= 4) return { total: hard, soft: false };\n    if (n === 2) {\n      // one Ace: 11 (or 10). Two Aces is Ban-Ban; value it as 21 for display.\n      if (aces >= 2) return { total: 21, soft: true };\n      return { total: hard + 10, soft: true }; // other card + 11; never exceeds 21\n    }\n    // n === 3: each Ace may be 1 or 10 -> add 9 per upgraded Ace\n    let best = hard;\n    let soft = false;\n    for (let k = 1; k <= aces; k++) {\n      const t = hard + 9 * k;\n      if (t <= 21) { best = t; soft = true; }\n    }\n    return { total: best, soft };\n  }\n\n  function summarize(cards) {\n    let hard = 0, aces = 0, sevens = 0, tens = 0;\n    for (const c of cards) {\n      hard += c;\n      if (c === 1) aces++;\n      if (c === 7) sevens++;\n      if (c === 10) tens++;\n    }\n    return { n: cards.length, hard, aces, sevens, tens };\n  }\n\n  /** Two-card instant specials: 'banBan' (A-A), 'banLuck' (A + ten-value), or null. */\n  function special2(cards) {\n    if (cards.length !== 2) return null;\n    const s = summarize(cards);\n    if (s.aces === 2) return 'banBan';\n    if (s.aces === 1 && s.tens === 1) return 'banLuck';\n    return null;\n  }\n\n  // Final-hand tiers, best first: 777 > 5-card 21 > 5-card Charlie > regular.\n  const TIER = { BUST: -1, REGULAR: 0, CHARLIE: 1, CHARLIE21: 2, TRIPLE7: 3 };\n\n  /** Full evaluation of a final (or in-progress) hand. */\n  function evaluate(cards, rules) {\n    rules = rules || DEFAULT_RULES;\n    const s = summarize(cards);\n    const v = valueFrom(s.n, s.hard, s.aces);\n    const bust = v.total > 21;\n    let tier = TIER.REGULAR, mult = 1, label = String(v.total);\n    if (bust) {\n      tier = TIER.BUST;\n      mult = s.n === 5 ? rules.fiveCardBustMult : 1;\n      label = s.n === 5 ? 'Five-card bust' : 'Bust';\n    } else if (s.n === 3 && s.sevens === 3) {\n      tier = TIER.TRIPLE7; mult = rules.pay.triple7; label = '777';\n    } else if (s.n === 5) {\n      if (v.total === 21) { tier = TIER.CHARLIE21; mult = rules.pay.charlie21; label = 'Five-card 21'; }\n      else { tier = TIER.CHARLIE; mult = rules.pay.charlie; label = 'Five-card Charlie'; }\n    }\n    // A hand must stop when bust, at 5 cards, or on 777.\n    const terminal = bust || s.n >= 5 || tier === TIER.TRIPLE7;\n    return { n: s.n, total: v.total, soft: v.soft, bust, tier, mult, label, terminal };\n  }\n\n  /**\n   * Settle two finished hands (neither had a 2-card special).\n   * Returns the player's result in betting units (+ = player wins).\n   */\n  function settle(p, d, rules) {\n    rules = rules || DEFAULT_RULES;\n    if (p.bust) {\n      if (d.bust) return rules.bothBustPush ? 0 : -p.mult;\n      return -Math.max(p.mult, d.mult);\n    }\n    if (d.bust) return p.mult;\n    if (p.tier !== d.tier) return p.tier > d.tier ? p.mult : -d.mult;\n    if (p.tier !== TIER.REGULAR) return 0; // same special tier: push\n    return p.total > d.total ? 1 : p.total < d.total ? -1 : 0;\n  }\n\n  /** Settle the instant 2-card specials. Returns null if neither side has one. */\n  function settleSpecials(pSpec, dSpec, rules) {\n    rules = rules || DEFAULT_RULES;\n    if (!pSpec && !dSpec) return null;\n    const rank = { banBan: 2, banLuck: 1 };\n    const pr = pSpec ? rank[pSpec] : 0, dr = dSpec ? rank[dSpec] : 0;\n    if (pr === dr) return 0;\n    return pr > dr ? rules.pay[pSpec] : -rules.pay[dSpec];\n  }\n\n  /** Chart key for a player/dealer decision: \"<cards>|<total>|<s|h>\". */\n  function stateKey(cards) {\n    const s = summarize(cards);\n    const v = valueFrom(s.n, s.hard, s.aces);\n    return s.n + '|' + v.total + '|' + (v.soft ? 's' : 'h');\n  }\n\n  // ---- Random numbers & dealing -------------------------------------------\n  /** Small fast seeded PRNG (xoshiro128**). */\n  function rng(seed) {\n    // expand the seed into 128 bits of state with splitmix32\n    let z = seed >>> 0;\n    const mix = () => {\n      z = (z + 0x9e3779b9) | 0;\n      let t = z ^ (z >>> 16); t = Math.imul(t, 0x21f0aaad);\n      t ^= t >>> 15; t = Math.imul(t, 0x735a2d97);\n      return (t ^ (t >>> 15)) >>> 0;\n    };\n    let a = mix(), b = mix(), c = mix(), d = mix();\n    function next() {\n      const t = b << 9;\n      let r = Math.imul(b, 5); r = Math.imul((r << 7) | (r >>> 25), 9);\n      c ^= a; d ^= b; b ^= c; a ^= d; c ^= t; d = (d << 11) | (d >>> 21);\n      return (r >>> 0) / 4294967296;\n    }\n    for (let i = 0; i < 16; i++) next();\n    return next;\n  }\n\n  function newDeck(decks) {\n    const deck = [];\n    for (let k = 0; k < (decks || 1); k++)\n      for (let r = 1; r <= 10; r++) {\n        const copies = r === 10 ? 16 : 4;\n        for (let i = 0; i < copies; i++) deck.push(r);\n      }\n    return deck;\n  }\n\n  /** Draws cards without replacement using a lazy Fisher-Yates over a fresh deck. */\n  function Shoe(rand, decks) {\n    this.rand = rand;\n    this.base = newDeck(decks);\n    this.cards = this.base.slice();\n    this.top = 0;\n  }\n  Shoe.prototype.shuffle = function () { this.top = 0; };\n  Shoe.prototype.draw = function () {\n    const a = this.cards, i = this.top + Math.floor(this.rand() * (a.length - this.top));\n    const c = a[i]; a[i] = a[this.top]; a[this.top] = c;\n    this.top++;\n    return c;\n  };\n\n  // ---- Policies -------------------------------------------------------------\n  // A player policy is fn(cards) -> probability of hitting (only asked when a\n  // real choice exists: total >= min stand, < 5 cards, not finished).\n  // A dealer policy is fn(cards, playerCardCount) -> probability of hitting.\n\n  function chartPolicy(chart) {\n    // chart: { key: hitProbability }\n    return (cards) => {\n      const p = chart[stateKey(cards)];\n      return p === undefined ? 0 : p;\n    };\n  }\n  function dealerChartPolicy(chart) {\n    // chart: { \"<np>\": { key: hitProbability } }\n    return (cards, np) => {\n      const t = chart[np];\n      const p = t && t[stateKey(cards)];\n      return p === undefined ? 0 : p;\n    };\n  }\n  const standOnMin = () => 0;\n\n  function mustHit(e, min) { return !e.terminal && e.total < min; }\n\n  /**\n   * Play one complete hand. Returns\n   * { result, player:[...], dealer:[...], pSpec, dSpec, pEval, dEval }.\n   */\n  function playHand(shoe, rules, playerPolicy, dealerPolicy) {\n    rules = rules || DEFAULT_RULES;\n    shoe.shuffle();\n    const rand = shoe.rand;\n    const player = [shoe.draw(), shoe.draw()];\n    const dealer = [shoe.draw(), shoe.draw()];\n    const pSpec = special2(player), dSpec = special2(dealer);\n    const sp = settleSpecials(pSpec, dSpec, rules);\n    if (sp !== null) return { result: sp, player, dealer, pSpec, dSpec, pEval: null, dEval: null };\n\n    let pe = evaluate(player, rules);\n    while (!pe.terminal) {\n      if (!mustHit(pe, rules.playerMinStand)) {\n        const h = playerPolicy(player);\n        if (!(h >= 1 || (h > 0 && rand() < h))) break;\n      }\n      player.push(shoe.draw());\n      pe = evaluate(player, rules);\n    }\n    const np = player.length;\n    let de = evaluate(dealer, rules);\n    while (!de.terminal) {\n      if (!mustHit(de, rules.dealerMinStand)) {\n        const h = dealerPolicy(dealer, np);\n        if (!(h >= 1 || (h > 0 && rand() < h))) break;\n      }\n      dealer.push(shoe.draw());\n      de = evaluate(dealer, rules);\n    }\n    return { result: settle(pe, de, rules), player, dealer, pSpec, dSpec, pEval: pe, dEval: de };\n  }\n\n  /**\n   * Monte Carlo: simulate n hands. Returns mean, standard error and an\n   * outcome breakdown. `onProgress(done)` is optional.\n   */\n  function simulate(opts) {\n    const rules = opts.rules || DEFAULT_RULES;\n    const rand = rng(opts.seed || 12345);\n    const shoe = new Shoe(rand, rules.decks);\n    let sum = 0, sumSq = 0, win = 0, loss = 0, push = 0;\n    const tally = {};\n    const bump = (k) => { tally[k] = (tally[k] || 0) + 1; };\n    for (let i = 0; i < opts.hands; i++) {\n      const h = playHand(shoe, rules, opts.playerPolicy, opts.dealerPolicy);\n      sum += h.result; sumSq += h.result * h.result;\n      if (h.result > 0) win++; else if (h.result < 0) loss++; else push++;\n      if (opts.tally) {\n        if (h.pSpec) bump('player ' + h.pSpec);\n        if (h.dSpec) bump('dealer ' + h.dSpec);\n        if (h.pEval) {\n          bump('player ' + (h.pEval.tier === TIER.REGULAR ? 'regular' : h.pEval.label));\n          bump('dealer ' + (h.dEval.tier === TIER.REGULAR ? 'regular' : h.dEval.label));\n          if (h.pEval.bust && h.dEval.bust) bump('both bust');\n        }\n      }\n    }\n    const n = opts.hands;\n    const mean = sum / n;\n    const variance = sumSq / n - mean * mean;\n    return { hands: n, mean, se: Math.sqrt(variance / n), sd: Math.sqrt(variance), win: win / n, loss: loss / n, push: push / n, tally };\n  }\n\n  return {\n    DEFAULT_RULES, rulesWith, TIER, valueFrom, summarize, special2, evaluate, settle,\n    settleSpecials, stateKey, rng, newDeck, Shoe, chartPolicy, dealerChartPolicy,\n    standOnMin, playHand, simulate,\n  };\n});\n";</script>
-<script>window.BL_DATA = {"generated":"2026-10-02T02:29:56.888Z","compositions":2983,"variants":{"bust1":{"rules":{"decks":1,"playerMinStand":16,"dealerMinStand":16,"maxCards":5,"bothBustPush":true,"fiveCardBustMult":1,"pay":{"banBan":3,"banLuck":2,"triple7":7,"charlie":2,"charlie21":3}},"fixed":{"optimalEV":0.046628,"chartEV":0.046628,"chart":{"2|20|h":{"hit":0,"margin":-1.3359,"standEV":0.6565,"hitEV":-0.6794,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.9252,"standEV":0.3659,"hitEV":-0.5593,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.5691,"standEV":0.1048,"hitEV":-0.4642,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.2221,"standEV":-0.1675,"hitEV":-0.3896,"reach":0.060332},"2|16|h":{"hit":1,"margin":0.1152,"standEV":-0.4541,"hitEV":-0.3389,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.3792,"standEV":0.6587,"hitEV":0.2796,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.1409,"standEV":0.3575,"hitEV":0.2166,"reach":0.012066},"2|18|s":{"hit":1,"margin":0.0812,"standEV":0.1002,"hitEV":0.1814,"reach":0.012066},"2|17|s":{"hit":1,"margin":0.3278,"standEV":-0.17,"hitEV":0.1577,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.6235,"standEV":-0.4462,"hitEV":0.1773,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6968,"standEV":0.889,"hitEV":-0.8078,"reach":0.04537},"3|20|h":{"hit":0,"margin":-1.322,"standEV":0.6557,"hitEV":-0.6663,"reach":0.045973},"3|19|h":{"hit":0,"margin":-0.9076,"standEV":0.3544,"hitEV":-0.5532,"reach":0.048748},"3|18|h":{"hit":0,"margin":-0.5694,"standEV":0.0962,"hitEV":-0.4732,"reach":0.052187},"3|17|h":{"hit":0,"margin":-0.2385,"standEV":-0.1723,"hitEV":-0.4107,"reach":0.054902},"3|16|h":{"hit":1,"margin":0.0992,"standEV":-0.4518,"hitEV":-0.3526,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.8339,"standEV":0.9012,"hitEV":0.0673,"reach":0.0096531},"3|20|s":{"hit":0,"margin":-0.0302,"standEV":0.664,"hitEV":0.6338,"reach":0.0088084},"3|19|s":{"hit":1,"margin":0.3061,"standEV":0.3594,"hitEV":0.6655,"reach":0.0086878},"3|18|s":{"hit":1,"margin":0.581,"standEV":0.1017,"hitEV":0.6827,"reach":0.0076018},"3|17|s":{"hit":1,"margin":0.9003,"standEV":-0.1663,"hitEV":0.734,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.2883,"standEV":-0.4424,"hitEV":0.8459,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-1.703,"standEV":0.9008,"hitEV":-0.8022,"reach":0.01643},"4|20|h":{"hit":0,"margin":-1.1743,"standEV":0.6627,"hitEV":-0.5117,"reach":0.018921},"4|19|h":{"hit":0,"margin":-0.6761,"standEV":0.356,"hitEV":-0.3201,"reach":0.018966},"4|18|h":{"hit":0,"margin":-0.2359,"standEV":0.0967,"hitEV":-0.1392,"reach":0.018769},"4|17|h":{"hit":1,"margin":0.2249,"standEV":-0.1702,"hitEV":0.0547,"reach":0.01839},"4|16|h":{"hit":1,"margin":0.7132,"standEV":-0.4461,"hitEV":0.2671,"reach":0.014481}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the dealer)","ev":0},"casino17":{"name":"Casino habit: hit 16, stand 17+","ev":0.028295},"charlieHunter":{"name":"Charlie chaser: always hit 4 cards","ev":-0.03229}}},"smart":{"value":-0.010389,"exploitability":0.00001801043706792932,"chart":{"2|20|h":{"hit":0,"margin":-1.2059,"standEV":0.5188,"hitEV":-0.6871,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.7629,"standEV":0.1937,"hitEV":-0.5692,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.3923,"standEV":-0.0799,"hitEV":-0.4722,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.1046,"standEV":-0.2787,"hitEV":-0.3833,"reach":0.060332},"2|16|h":{"hit":0.2306,"margin":-0.0017,"standEV":-0.342,"hitEV":-0.3436,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.6053,"standEV":0.545,"hitEV":-0.0602,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.243,"standEV":0.2111,"hitEV":-0.0319,"reach":0.012066},"2|18|s":{"hit":0.9999,"margin":0.1661,"standEV":-0.053,"hitEV":0.1132,"reach":0.012066},"2|17|s":{"hit":0.9999,"margin":0.3547,"standEV":-0.2499,"hitEV":0.1048,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.4636,"standEV":-0.3098,"hitEV":0.1538,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6015,"standEV":0.7997,"hitEV":-0.8018,"reach":0.041378},"3|20|h":{"hit":0,"margin":-1.2143,"standEV":0.5476,"hitEV":-0.6667,"reach":0.041981},"3|19|h":{"hit":0,"margin":-0.7957,"standEV":0.2364,"hitEV":-0.5593,"reach":0.044756},"3|18|h":{"hit":0,"margin":-0.4568,"standEV":-0.0253,"hitEV":-0.4822,"reach":0.048194},"3|17|h":{"hit":0,"margin":-0.1516,"standEV":-0.274,"hitEV":-0.4255,"reach":0.050909},"3|16|h":{"hit":0.9997,"margin":0.0394,"standEV":-0.4054,"hitEV":-0.366,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.8026,"standEV":0.8351,"hitEV":0.0325,"reach":0.0096529},"3|20|s":{"hit":0.9928,"margin":0.0179,"standEV":0.5794,"hitEV":0.5973,"reach":0.0088083},"3|19|s":{"hit":1,"margin":0.3684,"standEV":0.2635,"hitEV":0.6319,"reach":0.0086876},"3|18|s":{"hit":1,"margin":0.6537,"standEV":0.0003,"hitEV":0.654,"reach":0.0076017},"3|17|s":{"hit":1,"margin":0.9647,"standEV":-0.2538,"hitEV":0.7109,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.2247,"standEV":-0.3892,"hitEV":0.8355,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-1.6347,"standEV":0.8373,"hitEV":-0.7974,"reach":0.019284},"4|20|h":{"hit":0,"margin":-1.1067,"standEV":0.5973,"hitEV":-0.5094,"reach":0.019634},"4|19|h":{"hit":0,"margin":-0.6136,"standEV":0.2951,"hitEV":-0.3185,"reach":0.01964},"4|18|h":{"hit":0,"margin":-0.1855,"standEV":0.0467,"hitEV":-0.1388,"reach":0.019423},"4|17|h":{"hit":1,"margin":0.2443,"standEV":-0.1907,"hitEV":0.0536,"reach":0.019044},"4|16|h":{"hit":1,"margin":0.6895,"standEV":-0.4285,"hitEV":0.261,"reach":0.015151}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":1,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"dealerChart":{"2":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0.7248,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0.1633,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0.1299,"4|17|h":1,"4|16|h":1},"3":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0.9989,"2|20|s":0,"2|19|s":0,"2|18|s":0.9998,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0.7518,"3|21|s":0,"3|20|s":0.9995,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"4":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9996,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"5":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0.9997,"2|16|s":0.9999,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":1,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0.6368,"4|16|h":1}},"pureChartVsEqDealer":-0.009875,"pureChartVsDealerBR":-0.011397,"pureChartVsFixedDealer":0.039311,"fixedChartVsEqDealer":-0.01025,"fixedChartVsDealerBR":-0.014878,"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the dealer)","evVsEq":-0.047202,"evVsBR":-0.049983},"casino17":{"name":"Casino habit: hit 16, stand 17+","evVsEq":-0.031277,"evVsBR":-0.035604},"charlieHunter":{"name":"Charlie chaser: always hit 4 cards","evVsEq":-0.076784,"evVsBR":-0.080374}}},"baselineCharts":{"standAtMin":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0},"casino17":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"charlieHunter":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":1,"4|20|h":1,"4|19|h":1,"4|18|h":1,"4|17|h":1,"4|16|h":1}}},"bust2":{"rules":{"decks":1,"playerMinStand":16,"dealerMinStand":16,"maxCards":5,"bothBustPush":true,"fiveCardBustMult":2,"pay":{"banBan":3,"banLuck":2,"triple7":7,"charlie":2,"charlie21":3}},"fixed":{"optimalEV":0.026029,"chartEV":0.026029,"chart":{"2|20|h":{"hit":0,"margin":-1.3359,"standEV":0.6565,"hitEV":-0.6794,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.9252,"standEV":0.3659,"hitEV":-0.5593,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.5691,"standEV":0.1048,"hitEV":-0.4642,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.2221,"standEV":-0.1675,"hitEV":-0.3896,"reach":0.060332},"2|16|h":{"hit":1,"margin":0.1152,"standEV":-0.4541,"hitEV":-0.3389,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.3995,"standEV":0.6587,"hitEV":0.2593,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.1724,"standEV":0.3575,"hitEV":0.1851,"reach":0.012066},"2|18|s":{"hit":1,"margin":0.0373,"standEV":0.1002,"hitEV":0.1375,"reach":0.012066},"2|17|s":{"hit":1,"margin":0.272,"standEV":-0.17,"hitEV":0.102,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.5442,"standEV":-0.4462,"hitEV":0.098,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6968,"standEV":0.889,"hitEV":-0.8078,"reach":0.04537},"3|20|h":{"hit":0,"margin":-1.322,"standEV":0.6557,"hitEV":-0.6663,"reach":0.045973},"3|19|h":{"hit":0,"margin":-0.9076,"standEV":0.3544,"hitEV":-0.5532,"reach":0.048748},"3|18|h":{"hit":0,"margin":-0.5694,"standEV":0.0962,"hitEV":-0.4732,"reach":0.052187},"3|17|h":{"hit":0,"margin":-0.2385,"standEV":-0.1723,"hitEV":-0.4107,"reach":0.054902},"3|16|h":{"hit":1,"margin":0.0814,"standEV":-0.4518,"hitEV":-0.3703,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.9752,"standEV":0.9012,"hitEV":-0.0741,"reach":0.0096531},"3|20|s":{"hit":0,"margin":-0.1917,"standEV":0.664,"hitEV":0.4723,"reach":0.0088084},"3|19|s":{"hit":1,"margin":0.1446,"standEV":0.3594,"hitEV":0.5039,"reach":0.0086878},"3|18|s":{"hit":1,"margin":0.4172,"standEV":0.1017,"hitEV":0.5189,"reach":0.0076018},"3|17|s":{"hit":1,"margin":0.7334,"standEV":-0.1663,"hitEV":0.5671,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.0696,"standEV":-0.4424,"hitEV":0.6272,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-2.4787,"standEV":0.9008,"hitEV":-1.5779,"reach":0.01643},"4|20|h":{"hit":0,"margin":-1.8914,"standEV":0.6627,"hitEV":-1.2287,"reach":0.018921},"4|19|h":{"hit":0,"margin":-1.3387,"standEV":0.356,"hitEV":-0.9827,"reach":0.018966},"4|18|h":{"hit":0,"margin":-0.8482,"standEV":0.0967,"hitEV":-0.7515,"reach":0.018769},"4|17|h":{"hit":0,"margin":-0.3333,"standEV":-0.1702,"hitEV":-0.5034,"reach":0.01839},"4|16|h":{"hit":1,"margin":0.2132,"standEV":-0.4461,"hitEV":-0.2328,"reach":0.014481}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the dealer)","ev":-0.006736},"casino17":{"name":"Casino habit: hit 16, stand 17+","ev":0.015106},"charlieHunter":{"name":"Charlie chaser: always hit 4 cards","ev":-0.080716}}},"smart":{"value":-0.031046,"exploitability":0.00001952624213154286,"chart":{"2|20|h":{"hit":0,"margin":-1.2051,"standEV":0.5188,"hitEV":-0.6863,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.7632,"standEV":0.1937,"hitEV":-0.5695,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.3927,"standEV":-0.08,"hitEV":-0.4727,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.1051,"standEV":-0.2787,"hitEV":-0.3837,"reach":0.060332},"2|16|h":{"hit":0.2306,"margin":-0.0017,"standEV":-0.3418,"hitEV":-0.3435,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.6456,"standEV":0.545,"hitEV":-0.1006,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.2841,"standEV":0.2111,"hitEV":-0.0731,"reach":0.012066},"2|18|s":{"hit":0.9998,"margin":0.1203,"standEV":-0.0531,"hitEV":0.0672,"reach":0.012066},"2|17|s":{"hit":0.9999,"margin":0.2979,"standEV":-0.2498,"hitEV":0.0481,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.3836,"standEV":-0.3097,"hitEV":0.0739,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6013,"standEV":0.7995,"hitEV":-0.8018,"reach":0.041378},"3|20|h":{"hit":0,"margin":-1.2146,"standEV":0.5473,"hitEV":-0.6673,"reach":0.041981},"3|19|h":{"hit":0,"margin":-0.7991,"standEV":0.236,"hitEV":-0.5631,"reach":0.044756},"3|18|h":{"hit":0,"margin":-0.457,"standEV":-0.026,"hitEV":-0.483,"reach":0.048195},"3|17|h":{"hit":0,"margin":-0.1509,"standEV":-0.2747,"hitEV":-0.4255,"reach":0.05091},"3|16|h":{"hit":0.9257,"margin":0.0199,"standEV":-0.405,"hitEV":-0.3851,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.9675,"standEV":0.8349,"hitEV":-0.1326,"reach":0.0096529},"3|20|s":{"hit":0,"margin":-0.1678,"standEV":0.5791,"hitEV":0.4113,"reach":0.0088082},"3|19|s":{"hit":0.9999,"margin":0.2093,"standEV":0.2631,"hitEV":0.4724,"reach":0.0086876},"3|18|s":{"hit":1,"margin":0.4937,"standEV":-0.0003,"hitEV":0.4934,"reach":0.0076016},"3|17|s":{"hit":1,"margin":0.8028,"standEV":-0.2545,"hitEV":0.5483,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.007,"standEV":-0.3887,"hitEV":0.6183,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-2.409,"standEV":0.8371,"hitEV":-1.5719,"reach":0.016202},"4|20|h":{"hit":0,"margin":-1.8214,"standEV":0.5975,"hitEV":-1.2239,"reach":0.0187},"4|19|h":{"hit":0,"margin":-1.2758,"standEV":0.2957,"hitEV":-0.9801,"reach":0.018668},"4|18|h":{"hit":0,"margin":-0.7972,"standEV":0.0472,"hitEV":-0.75,"reach":0.018471},"4|17|h":{"hit":0,"margin":-0.312,"standEV":-0.1905,"hitEV":-0.5024,"reach":0.018092},"4|16|h":{"hit":1,"margin":0.1961,"standEV":-0.4286,"hitEV":-0.2325,"reach":0.014481}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"dealerChart":{"2":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0.7234,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0.1677,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0.1298,"4|17|h":1,"4|16|h":1},"3":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0.9986,"2|20|s":0,"2|19|s":0,"2|18|s":0.9997,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0.7748,"3|21|s":0,"3|20|s":0.9994,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"4":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0.9998,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9975,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"5":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9989,"3|19|s":0.9999,"3|18|s":0.9999,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0}},"pureChartVsEqDealer":-0.030566,"pureChartVsDealerBR":-0.032091,"pureChartVsFixedDealer":0.018965,"fixedChartVsEqDealer":-0.030788,"fixedChartVsDealerBR":-0.035405,"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the dealer)","evVsEq":-0.053738,"evVsBR":-0.056516},"casino17":{"name":"Casino habit: hit 16, stand 17+","evVsEq":-0.044199,"evVsBR":-0.048513},"charlieHunter":{"name":"Charlie chaser: always hit 4 cards","evVsEq":-0.124818,"evVsBR":-0.128357}}},"baselineCharts":{"standAtMin":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0},"casino17":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"charlieHunter":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":1,"4|20|h":1,"4|19|h":1,"4|18|h":1,"4|17|h":1,"4|16|h":1}}}},"mc":{"generated":"2026-10-02T02:36:18.263Z","variants":{"bust1":[{"id":"optimal-fixed","label":"Optimal chart vs fixed dealer","dealer":"fixed","hands":20000000,"mean":0.047041,"se":0.000264,"exact":0.046628,"z":1.56},{"id":"optimal-smart","label":"Smart-dealer chart vs smart dealer","dealer":"smart","hands":20000000,"mean":-0.009514,"se":0.000271,"exact":-0.009875,"z":1.33},{"id":"standAtMin-fixed","label":"Stand on 16+ (copy the dealer) vs fixed","dealer":"fixed","hands":4000000,"mean":-0.000078,"se":0.000576,"exact":0,"z":-0.14},{"id":"casino17-fixed","label":"Casino habit: hit 16, stand 17+ vs fixed","dealer":"fixed","hands":4000000,"mean":0.028215,"se":0.00058,"exact":0.028295,"z":-0.14},{"id":"charlieHunter-fixed","label":"Charlie chaser: always hit 4 cards vs fixed","dealer":"fixed","hands":4000000,"mean":-0.032671,"se":0.000587,"exact":-0.03229,"z":-0.65}],"bust2":[{"id":"optimal-fixed","label":"Optimal chart vs fixed dealer","dealer":"fixed","hands":20000000,"mean":0.025682,"se":0.000267,"exact":0.026029,"z":-1.3},{"id":"optimal-smart","label":"Smart-dealer chart vs smart dealer","dealer":"smart","hands":20000000,"mean":-0.03037,"se":0.000273,"exact":-0.030566,"z":0.72},{"id":"standAtMin-fixed","label":"Stand on 16+ (copy the dealer) vs fixed","dealer":"fixed","hands":4000000,"mean":-0.007437,"se":0.00058,"exact":-0.006736,"z":-1.21},{"id":"casino17-fixed","label":"Casino habit: hit 16, stand 17+ vs fixed","dealer":"fixed","hands":4000000,"mean":0.014086,"se":0.000589,"exact":0.015106,"z":-1.73},{"id":"charlieHunter-fixed","label":"Charlie chaser: always hit 4 cards vs fixed","dealer":"fixed","hands":4000000,"mean":-0.081996,"se":0.000616,"exact":-0.080716,"z":-2.08}]}}};</script>
+window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlement, dealing and\n * hand simulation. Shared by the browser page and the Node solvers.\n *\n * Ranks are encoded 1..10 (1 = Ace, 10 = any ten-value card: 10/J/Q/K).\n */\n(function (root, factory) {\n  if (typeof module === 'object' && module.exports) module.exports = factory();\n  else root.BanluckCore = factory();\n})(typeof self !== 'undefined' ? self : this, function () {\n  'use strict';\n\n  const DEFAULT_RULES = Object.freeze({\n    decks: 1,\n    playerMinStand: 16,\n    dealerMinStand: 16,\n    maxCards: 5,\n    bothBustPush: true,\n    fiveCardBustMult: 2, // 1 = normal bust, 2 = a 5-card bust loses double (player only)\n    pay: Object.freeze({ banBan: 3, banLuck: 2, triple7: 7, dragon: 2, dragon21: 3 }),\n  });\n\n  function rulesWith(overrides) {\n    const r = Object.assign({}, DEFAULT_RULES, overrides || {});\n    r.pay = Object.assign({}, DEFAULT_RULES.pay, (overrides && overrides.pay) || {});\n    return r;\n  }\n\n  // ---- Hand values ---------------------------------------------------------\n  // Ace values depend on how many cards are held:\n  //   2 cards: Ace = 11 or 10      3 cards: Ace = 10 or 1      4-5 cards: Ace = 1\n  // The best total is the highest one that does not exceed 21.\n\n  /** Evaluate from summary counts: n cards, hard sum (Aces as 1), number of Aces. */\n  function valueFrom(n, hard, aces) {\n    if (aces === 0 || n >= 4) return { total: hard, soft: false };\n    if (n === 2) {\n      // one Ace: 11 (or 10). Two Aces is Ban-Ban; value it as 21 for display.\n      if (aces >= 2) return { total: 21, soft: true };\n      return { total: hard + 10, soft: true }; // other card + 11; never exceeds 21\n    }\n    // n === 3: each Ace may be 1 or 10 -> add 9 per upgraded Ace\n    let best = hard;\n    let soft = false;\n    for (let k = 1; k <= aces; k++) {\n      const t = hard + 9 * k;\n      if (t <= 21) { best = t; soft = true; }\n    }\n    return { total: best, soft };\n  }\n\n  function summarize(cards) {\n    let hard = 0, aces = 0, sevens = 0, tens = 0;\n    for (const c of cards) {\n      hard += c;\n      if (c === 1) aces++;\n      if (c === 7) sevens++;\n      if (c === 10) tens++;\n    }\n    return { n: cards.length, hard, aces, sevens, tens };\n  }\n\n  /** Two-card instant specials: 'banBan' (A-A), 'banLuck' (A + ten-value), or null. */\n  function special2(cards) {\n    if (cards.length !== 2) return null;\n    const s = summarize(cards);\n    if (s.aces === 2) return 'banBan';\n    if (s.aces === 1 && s.tens === 1) return 'banLuck';\n    return null;\n  }\n\n  // Final-hand tiers, best first: 777 > 五龙 21 > 五龙 (Five Dragons) > regular.\n  const TIER = { BUST: -1, REGULAR: 0, DRAGON: 1, DRAGON21: 2, TRIPLE7: 3 };\n\n  /** Full evaluation of a final (or in-progress) hand. */\n  function evaluate(cards, rules) {\n    rules = rules || DEFAULT_RULES;\n    const s = summarize(cards);\n    const v = valueFrom(s.n, s.hard, s.aces);\n    const bust = v.total > 21;\n    let tier = TIER.REGULAR, mult = 1, label = String(v.total);\n    if (bust) {\n      tier = TIER.BUST;\n      mult = s.n === 5 ? rules.fiveCardBustMult : 1;\n      label = s.n === 5 ? 'Five-card bust' : 'Bust';\n    } else if (s.n === 3 && s.sevens === 3) {\n      tier = TIER.TRIPLE7; mult = rules.pay.triple7; label = '777';\n    } else if (s.n === 5) {\n      if (v.total === 21) { tier = TIER.DRAGON21; mult = rules.pay.dragon21; label = 'Five Dragons 21'; }\n      else { tier = TIER.DRAGON; mult = rules.pay.dragon; label = 'Five Dragons'; }\n    }\n    // A hand must stop when bust, at 5 cards, or on 777.\n    const terminal = bust || s.n >= 5 || tier === TIER.TRIPLE7;\n    return { n: s.n, total: v.total, soft: v.soft, bust, tier, mult, label, terminal };\n  }\n\n  /**\n   * Settle two finished hands (neither had a 2-card special).\n   * Returns the player's result in betting units (+ = player wins).\n   */\n  function settle(p, d, rules) {\n    rules = rules || DEFAULT_RULES;\n    if (p.bust) {\n      if (d.bust) return rules.bothBustPush ? 0 : -p.mult;\n      return -Math.max(p.mult, d.mult);\n    }\n    if (d.bust) return p.mult;\n    if (p.tier !== d.tier) return p.tier > d.tier ? p.mult : -d.mult;\n    if (p.tier !== TIER.REGULAR) return 0; // same special tier: push\n    return p.total > d.total ? 1 : p.total < d.total ? -1 : 0;\n  }\n\n  /** Settle the instant 2-card specials. Returns null if neither side has one. */\n  function settleSpecials(pSpec, dSpec, rules) {\n    rules = rules || DEFAULT_RULES;\n    if (!pSpec && !dSpec) return null;\n    const rank = { banBan: 2, banLuck: 1 };\n    const pr = pSpec ? rank[pSpec] : 0, dr = dSpec ? rank[dSpec] : 0;\n    if (pr === dr) return 0;\n    return pr > dr ? rules.pay[pSpec] : -rules.pay[dSpec];\n  }\n\n  /** Chart key for a player/dealer decision: \"<cards>|<total>|<s|h>\". */\n  function stateKey(cards) {\n    const s = summarize(cards);\n    const v = valueFrom(s.n, s.hard, s.aces);\n    return s.n + '|' + v.total + '|' + (v.soft ? 's' : 'h');\n  }\n\n  // ---- Random numbers & dealing -------------------------------------------\n  /** Small fast seeded PRNG (xoshiro128**). */\n  function rng(seed) {\n    // expand the seed into 128 bits of state with splitmix32\n    let z = seed >>> 0;\n    const mix = () => {\n      z = (z + 0x9e3779b9) | 0;\n      let t = z ^ (z >>> 16); t = Math.imul(t, 0x21f0aaad);\n      t ^= t >>> 15; t = Math.imul(t, 0x735a2d97);\n      return (t ^ (t >>> 15)) >>> 0;\n    };\n    let a = mix(), b = mix(), c = mix(), d = mix();\n    function next() {\n      const t = b << 9;\n      let r = Math.imul(b, 5); r = Math.imul((r << 7) | (r >>> 25), 9);\n      c ^= a; d ^= b; b ^= c; a ^= d; c ^= t; d = (d << 11) | (d >>> 21);\n      return (r >>> 0) / 4294967296;\n    }\n    for (let i = 0; i < 16; i++) next();\n    return next;\n  }\n\n  function newDeck(decks) {\n    const deck = [];\n    for (let k = 0; k < (decks || 1); k++)\n      for (let r = 1; r <= 10; r++) {\n        const copies = r === 10 ? 16 : 4;\n        for (let i = 0; i < copies; i++) deck.push(r);\n      }\n    return deck;\n  }\n\n  /** Draws cards without replacement using a lazy Fisher-Yates over a fresh deck. */\n  function Shoe(rand, decks) {\n    this.rand = rand;\n    this.base = newDeck(decks);\n    this.cards = this.base.slice();\n    this.top = 0;\n  }\n  Shoe.prototype.shuffle = function () { this.top = 0; };\n  Shoe.prototype.draw = function () {\n    const a = this.cards, i = this.top + Math.floor(this.rand() * (a.length - this.top));\n    const c = a[i]; a[i] = a[this.top]; a[this.top] = c;\n    this.top++;\n    return c;\n  };\n\n  // ---- Policies -------------------------------------------------------------\n  // A player policy is fn(cards) -> probability of hitting (only asked when a\n  // real choice exists: total >= min stand, < 5 cards, not finished).\n  // A dealer policy is fn(cards, playerCardCount) -> probability of hitting.\n\n  function chartPolicy(chart) {\n    // chart: { key: hitProbability }\n    return (cards) => {\n      const p = chart[stateKey(cards)];\n      return p === undefined ? 0 : p;\n    };\n  }\n  function dealerChartPolicy(chart) {\n    // chart: { \"<np>\": { key: hitProbability } }\n    return (cards, np) => {\n      const t = chart[np];\n      const p = t && t[stateKey(cards)];\n      return p === undefined ? 0 : p;\n    };\n  }\n  const standOnMin = () => 0;\n\n  function mustHit(e, min) { return !e.terminal && e.total < min; }\n\n  /**\n   * Play one complete hand. Returns\n   * { result, player:[...], dealer:[...], pSpec, dSpec, pEval, dEval }.\n   */\n  function playHand(shoe, rules, playerPolicy, dealerPolicy) {\n    rules = rules || DEFAULT_RULES;\n    shoe.shuffle();\n    const rand = shoe.rand;\n    const player = [shoe.draw(), shoe.draw()];\n    const dealer = [shoe.draw(), shoe.draw()];\n    const pSpec = special2(player), dSpec = special2(dealer);\n    const sp = settleSpecials(pSpec, dSpec, rules);\n    if (sp !== null) return { result: sp, player, dealer, pSpec, dSpec, pEval: null, dEval: null };\n\n    let pe = evaluate(player, rules);\n    while (!pe.terminal) {\n      if (!mustHit(pe, rules.playerMinStand)) {\n        const h = playerPolicy(player);\n        if (!(h >= 1 || (h > 0 && rand() < h))) break;\n      }\n      player.push(shoe.draw());\n      pe = evaluate(player, rules);\n    }\n    const np = player.length;\n    let de = evaluate(dealer, rules);\n    while (!de.terminal) {\n      if (!mustHit(de, rules.dealerMinStand)) {\n        const h = dealerPolicy(dealer, np);\n        if (!(h >= 1 || (h > 0 && rand() < h))) break;\n      }\n      dealer.push(shoe.draw());\n      de = evaluate(dealer, rules);\n    }\n    return { result: settle(pe, de, rules), player, dealer, pSpec, dSpec, pEval: pe, dEval: de };\n  }\n\n  /**\n   * Monte Carlo: simulate n hands. Returns mean, standard error and an\n   * outcome breakdown. `onProgress(done)` is optional.\n   */\n  function simulate(opts) {\n    const rules = opts.rules || DEFAULT_RULES;\n    const rand = rng(opts.seed || 12345);\n    const shoe = new Shoe(rand, rules.decks);\n    let sum = 0, sumSq = 0, win = 0, loss = 0, push = 0;\n    const tally = {};\n    const bump = (k) => { tally[k] = (tally[k] || 0) + 1; };\n    for (let i = 0; i < opts.hands; i++) {\n      const h = playHand(shoe, rules, opts.playerPolicy, opts.dealerPolicy);\n      sum += h.result; sumSq += h.result * h.result;\n      if (h.result > 0) win++; else if (h.result < 0) loss++; else push++;\n      if (opts.tally) {\n        if (h.pSpec) bump('player ' + h.pSpec);\n        if (h.dSpec) bump('dealer ' + h.dSpec);\n        if (h.pEval) {\n          bump('player ' + (h.pEval.tier === TIER.REGULAR ? 'regular' : h.pEval.label));\n          bump('dealer ' + (h.dEval.tier === TIER.REGULAR ? 'regular' : h.dEval.label));\n          if (h.pEval.bust && h.dEval.bust) bump('both bust');\n        }\n      }\n    }\n    const n = opts.hands;\n    const mean = sum / n;\n    const variance = sumSq / n - mean * mean;\n    return { hands: n, mean, se: Math.sqrt(variance / n), sd: Math.sqrt(variance), win: win / n, loss: loss / n, push: push / n, tally };\n  }\n\n  return {\n    DEFAULT_RULES, rulesWith, TIER, valueFrom, summarize, special2, evaluate, settle,\n    settleSpecials, stateKey, rng, newDeck, Shoe, chartPolicy, dealerChartPolicy,\n    standOnMin, playHand, simulate,\n  };\n});\n";</script>
+<script>window.BL_DATA = {"generated":"2026-10-02T02:29:56.888Z","compositions":2983,"variants":{"bust1":{"rules":{"decks":1,"playerMinStand":16,"dealerMinStand":16,"maxCards":5,"bothBustPush":true,"fiveCardBustMult":1,"pay":{"banBan":3,"banLuck":2,"triple7":7,"dragon":2,"dragon21":3}},"fixed":{"optimalEV":0.046628,"chartEV":0.046628,"chart":{"2|20|h":{"hit":0,"margin":-1.3359,"standEV":0.6565,"hitEV":-0.6794,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.9252,"standEV":0.3659,"hitEV":-0.5593,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.5691,"standEV":0.1048,"hitEV":-0.4642,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.2221,"standEV":-0.1675,"hitEV":-0.3896,"reach":0.060332},"2|16|h":{"hit":1,"margin":0.1152,"standEV":-0.4541,"hitEV":-0.3389,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.3792,"standEV":0.6587,"hitEV":0.2796,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.1409,"standEV":0.3575,"hitEV":0.2166,"reach":0.012066},"2|18|s":{"hit":1,"margin":0.0812,"standEV":0.1002,"hitEV":0.1814,"reach":0.012066},"2|17|s":{"hit":1,"margin":0.3278,"standEV":-0.17,"hitEV":0.1577,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.6235,"standEV":-0.4462,"hitEV":0.1773,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6968,"standEV":0.889,"hitEV":-0.8078,"reach":0.04537},"3|20|h":{"hit":0,"margin":-1.322,"standEV":0.6557,"hitEV":-0.6663,"reach":0.045973},"3|19|h":{"hit":0,"margin":-0.9076,"standEV":0.3544,"hitEV":-0.5532,"reach":0.048748},"3|18|h":{"hit":0,"margin":-0.5694,"standEV":0.0962,"hitEV":-0.4732,"reach":0.052187},"3|17|h":{"hit":0,"margin":-0.2385,"standEV":-0.1723,"hitEV":-0.4107,"reach":0.054902},"3|16|h":{"hit":1,"margin":0.0992,"standEV":-0.4518,"hitEV":-0.3526,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.8339,"standEV":0.9012,"hitEV":0.0673,"reach":0.0096531},"3|20|s":{"hit":0,"margin":-0.0302,"standEV":0.664,"hitEV":0.6338,"reach":0.0088084},"3|19|s":{"hit":1,"margin":0.3061,"standEV":0.3594,"hitEV":0.6655,"reach":0.0086878},"3|18|s":{"hit":1,"margin":0.581,"standEV":0.1017,"hitEV":0.6827,"reach":0.0076018},"3|17|s":{"hit":1,"margin":0.9003,"standEV":-0.1663,"hitEV":0.734,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.2883,"standEV":-0.4424,"hitEV":0.8459,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-1.703,"standEV":0.9008,"hitEV":-0.8022,"reach":0.01643},"4|20|h":{"hit":0,"margin":-1.1743,"standEV":0.6627,"hitEV":-0.5117,"reach":0.018921},"4|19|h":{"hit":0,"margin":-0.6761,"standEV":0.356,"hitEV":-0.3201,"reach":0.018966},"4|18|h":{"hit":0,"margin":-0.2359,"standEV":0.0967,"hitEV":-0.1392,"reach":0.018769},"4|17|h":{"hit":1,"margin":0.2249,"standEV":-0.1702,"hitEV":0.0547,"reach":0.01839},"4|16|h":{"hit":1,"margin":0.7132,"standEV":-0.4461,"hitEV":0.2671,"reach":0.014481}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the dealer)","ev":0},"casino17":{"name":"Casino habit: hit 16, stand 17+","ev":0.028295},"dragonChaser":{"name":"Dragon chaser: always hit 4 cards","ev":-0.03229}}},"smart":{"value":-0.010389,"exploitability":0.00001801043706792932,"chart":{"2|20|h":{"hit":0,"margin":-1.2059,"standEV":0.5188,"hitEV":-0.6871,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.7629,"standEV":0.1937,"hitEV":-0.5692,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.3923,"standEV":-0.0799,"hitEV":-0.4722,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.1046,"standEV":-0.2787,"hitEV":-0.3833,"reach":0.060332},"2|16|h":{"hit":0.2306,"margin":-0.0017,"standEV":-0.342,"hitEV":-0.3436,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.6053,"standEV":0.545,"hitEV":-0.0602,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.243,"standEV":0.2111,"hitEV":-0.0319,"reach":0.012066},"2|18|s":{"hit":0.9999,"margin":0.1661,"standEV":-0.053,"hitEV":0.1132,"reach":0.012066},"2|17|s":{"hit":0.9999,"margin":0.3547,"standEV":-0.2499,"hitEV":0.1048,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.4636,"standEV":-0.3098,"hitEV":0.1538,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6015,"standEV":0.7997,"hitEV":-0.8018,"reach":0.041378},"3|20|h":{"hit":0,"margin":-1.2143,"standEV":0.5476,"hitEV":-0.6667,"reach":0.041981},"3|19|h":{"hit":0,"margin":-0.7957,"standEV":0.2364,"hitEV":-0.5593,"reach":0.044756},"3|18|h":{"hit":0,"margin":-0.4568,"standEV":-0.0253,"hitEV":-0.4822,"reach":0.048194},"3|17|h":{"hit":0,"margin":-0.1516,"standEV":-0.274,"hitEV":-0.4255,"reach":0.050909},"3|16|h":{"hit":0.9997,"margin":0.0394,"standEV":-0.4054,"hitEV":-0.366,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.8026,"standEV":0.8351,"hitEV":0.0325,"reach":0.0096529},"3|20|s":{"hit":0.9928,"margin":0.0179,"standEV":0.5794,"hitEV":0.5973,"reach":0.0088083},"3|19|s":{"hit":1,"margin":0.3684,"standEV":0.2635,"hitEV":0.6319,"reach":0.0086876},"3|18|s":{"hit":1,"margin":0.6537,"standEV":0.0003,"hitEV":0.654,"reach":0.0076017},"3|17|s":{"hit":1,"margin":0.9647,"standEV":-0.2538,"hitEV":0.7109,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.2247,"standEV":-0.3892,"hitEV":0.8355,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-1.6347,"standEV":0.8373,"hitEV":-0.7974,"reach":0.019284},"4|20|h":{"hit":0,"margin":-1.1067,"standEV":0.5973,"hitEV":-0.5094,"reach":0.019634},"4|19|h":{"hit":0,"margin":-0.6136,"standEV":0.2951,"hitEV":-0.3185,"reach":0.01964},"4|18|h":{"hit":0,"margin":-0.1855,"standEV":0.0467,"hitEV":-0.1388,"reach":0.019423},"4|17|h":{"hit":1,"margin":0.2443,"standEV":-0.1907,"hitEV":0.0536,"reach":0.019044},"4|16|h":{"hit":1,"margin":0.6895,"standEV":-0.4285,"hitEV":0.261,"reach":0.015151}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":1,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"dealerChart":{"2":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0.7248,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0.1633,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0.1299,"4|17|h":1,"4|16|h":1},"3":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0.9989,"2|20|s":0,"2|19|s":0,"2|18|s":0.9998,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0.7518,"3|21|s":0,"3|20|s":0.9995,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"4":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9996,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"5":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0.9997,"2|16|s":0.9999,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":1,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0.6368,"4|16|h":1}},"pureChartVsEqDealer":-0.009875,"pureChartVsDealerBR":-0.011397,"pureChartVsFixedDealer":0.039311,"fixedChartVsEqDealer":-0.01025,"fixedChartVsDealerBR":-0.014878,"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the dealer)","evVsEq":-0.047202,"evVsBR":-0.049983},"casino17":{"name":"Casino habit: hit 16, stand 17+","evVsEq":-0.031277,"evVsBR":-0.035604},"dragonChaser":{"name":"Dragon chaser: always hit 4 cards","evVsEq":-0.076784,"evVsBR":-0.080374}}},"baselineCharts":{"standAtMin":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0},"casino17":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"dragonChaser":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":1,"4|20|h":1,"4|19|h":1,"4|18|h":1,"4|17|h":1,"4|16|h":1}}},"bust2":{"rules":{"decks":1,"playerMinStand":16,"dealerMinStand":16,"maxCards":5,"bothBustPush":true,"fiveCardBustMult":2,"pay":{"banBan":3,"banLuck":2,"triple7":7,"dragon":2,"dragon21":3}},"fixed":{"optimalEV":0.026029,"chartEV":0.026029,"chart":{"2|20|h":{"hit":0,"margin":-1.3359,"standEV":0.6565,"hitEV":-0.6794,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.9252,"standEV":0.3659,"hitEV":-0.5593,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.5691,"standEV":0.1048,"hitEV":-0.4642,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.2221,"standEV":-0.1675,"hitEV":-0.3896,"reach":0.060332},"2|16|h":{"hit":1,"margin":0.1152,"standEV":-0.4541,"hitEV":-0.3389,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.3995,"standEV":0.6587,"hitEV":0.2593,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.1724,"standEV":0.3575,"hitEV":0.1851,"reach":0.012066},"2|18|s":{"hit":1,"margin":0.0373,"standEV":0.1002,"hitEV":0.1375,"reach":0.012066},"2|17|s":{"hit":1,"margin":0.272,"standEV":-0.17,"hitEV":0.102,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.5442,"standEV":-0.4462,"hitEV":0.098,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6968,"standEV":0.889,"hitEV":-0.8078,"reach":0.04537},"3|20|h":{"hit":0,"margin":-1.322,"standEV":0.6557,"hitEV":-0.6663,"reach":0.045973},"3|19|h":{"hit":0,"margin":-0.9076,"standEV":0.3544,"hitEV":-0.5532,"reach":0.048748},"3|18|h":{"hit":0,"margin":-0.5694,"standEV":0.0962,"hitEV":-0.4732,"reach":0.052187},"3|17|h":{"hit":0,"margin":-0.2385,"standEV":-0.1723,"hitEV":-0.4107,"reach":0.054902},"3|16|h":{"hit":1,"margin":0.0814,"standEV":-0.4518,"hitEV":-0.3703,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.9752,"standEV":0.9012,"hitEV":-0.0741,"reach":0.0096531},"3|20|s":{"hit":0,"margin":-0.1917,"standEV":0.664,"hitEV":0.4723,"reach":0.0088084},"3|19|s":{"hit":1,"margin":0.1446,"standEV":0.3594,"hitEV":0.5039,"reach":0.0086878},"3|18|s":{"hit":1,"margin":0.4172,"standEV":0.1017,"hitEV":0.5189,"reach":0.0076018},"3|17|s":{"hit":1,"margin":0.7334,"standEV":-0.1663,"hitEV":0.5671,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.0696,"standEV":-0.4424,"hitEV":0.6272,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-2.4787,"standEV":0.9008,"hitEV":-1.5779,"reach":0.01643},"4|20|h":{"hit":0,"margin":-1.8914,"standEV":0.6627,"hitEV":-1.2287,"reach":0.018921},"4|19|h":{"hit":0,"margin":-1.3387,"standEV":0.356,"hitEV":-0.9827,"reach":0.018966},"4|18|h":{"hit":0,"margin":-0.8482,"standEV":0.0967,"hitEV":-0.7515,"reach":0.018769},"4|17|h":{"hit":0,"margin":-0.3333,"standEV":-0.1702,"hitEV":-0.5034,"reach":0.01839},"4|16|h":{"hit":1,"margin":0.2132,"standEV":-0.4461,"hitEV":-0.2328,"reach":0.014481}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the dealer)","ev":-0.006736},"casino17":{"name":"Casino habit: hit 16, stand 17+","ev":0.015106},"dragonChaser":{"name":"Dragon chaser: always hit 4 cards","ev":-0.080716}}},"smart":{"value":-0.031046,"exploitability":0.00001952624213154286,"chart":{"2|20|h":{"hit":0,"margin":-1.2051,"standEV":0.5188,"hitEV":-0.6863,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.7632,"standEV":0.1937,"hitEV":-0.5695,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.3927,"standEV":-0.08,"hitEV":-0.4727,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.1051,"standEV":-0.2787,"hitEV":-0.3837,"reach":0.060332},"2|16|h":{"hit":0.2306,"margin":-0.0017,"standEV":-0.3418,"hitEV":-0.3435,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.6456,"standEV":0.545,"hitEV":-0.1006,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.2841,"standEV":0.2111,"hitEV":-0.0731,"reach":0.012066},"2|18|s":{"hit":0.9998,"margin":0.1203,"standEV":-0.0531,"hitEV":0.0672,"reach":0.012066},"2|17|s":{"hit":0.9999,"margin":0.2979,"standEV":-0.2498,"hitEV":0.0481,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.3836,"standEV":-0.3097,"hitEV":0.0739,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6013,"standEV":0.7995,"hitEV":-0.8018,"reach":0.041378},"3|20|h":{"hit":0,"margin":-1.2146,"standEV":0.5473,"hitEV":-0.6673,"reach":0.041981},"3|19|h":{"hit":0,"margin":-0.7991,"standEV":0.236,"hitEV":-0.5631,"reach":0.044756},"3|18|h":{"hit":0,"margin":-0.457,"standEV":-0.026,"hitEV":-0.483,"reach":0.048195},"3|17|h":{"hit":0,"margin":-0.1509,"standEV":-0.2747,"hitEV":-0.4255,"reach":0.05091},"3|16|h":{"hit":0.9257,"margin":0.0199,"standEV":-0.405,"hitEV":-0.3851,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.9675,"standEV":0.8349,"hitEV":-0.1326,"reach":0.0096529},"3|20|s":{"hit":0,"margin":-0.1678,"standEV":0.5791,"hitEV":0.4113,"reach":0.0088082},"3|19|s":{"hit":0.9999,"margin":0.2093,"standEV":0.2631,"hitEV":0.4724,"reach":0.0086876},"3|18|s":{"hit":1,"margin":0.4937,"standEV":-0.0003,"hitEV":0.4934,"reach":0.0076016},"3|17|s":{"hit":1,"margin":0.8028,"standEV":-0.2545,"hitEV":0.5483,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.007,"standEV":-0.3887,"hitEV":0.6183,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-2.409,"standEV":0.8371,"hitEV":-1.5719,"reach":0.016202},"4|20|h":{"hit":0,"margin":-1.8214,"standEV":0.5975,"hitEV":-1.2239,"reach":0.0187},"4|19|h":{"hit":0,"margin":-1.2758,"standEV":0.2957,"hitEV":-0.9801,"reach":0.018668},"4|18|h":{"hit":0,"margin":-0.7972,"standEV":0.0472,"hitEV":-0.75,"reach":0.018471},"4|17|h":{"hit":0,"margin":-0.312,"standEV":-0.1905,"hitEV":-0.5024,"reach":0.018092},"4|16|h":{"hit":1,"margin":0.1961,"standEV":-0.4286,"hitEV":-0.2325,"reach":0.014481}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"dealerChart":{"2":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0.7234,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0.1677,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0.1298,"4|17|h":1,"4|16|h":1},"3":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0.9986,"2|20|s":0,"2|19|s":0,"2|18|s":0.9997,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0.7748,"3|21|s":0,"3|20|s":0.9994,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"4":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0.9998,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9975,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"5":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9989,"3|19|s":0.9999,"3|18|s":0.9999,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0}},"pureChartVsEqDealer":-0.030566,"pureChartVsDealerBR":-0.032091,"pureChartVsFixedDealer":0.018965,"fixedChartVsEqDealer":-0.030788,"fixedChartVsDealerBR":-0.035405,"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the dealer)","evVsEq":-0.053738,"evVsBR":-0.056516},"casino17":{"name":"Casino habit: hit 16, stand 17+","evVsEq":-0.044199,"evVsBR":-0.048513},"dragonChaser":{"name":"Dragon chaser: always hit 4 cards","evVsEq":-0.124818,"evVsBR":-0.128357}}},"baselineCharts":{"standAtMin":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0},"casino17":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"dragonChaser":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":1,"4|20|h":1,"4|19|h":1,"4|18|h":1,"4|17|h":1,"4|16|h":1}}}},"mc":{"generated":"2026-10-02T02:36:18.263Z","variants":{"bust1":[{"id":"optimal-fixed","label":"Optimal chart vs fixed dealer","dealer":"fixed","hands":20000000,"mean":0.047041,"se":0.000264,"exact":0.046628,"z":1.56,"win":0.4432,"loss":0.418209,"push":0.138591},{"id":"optimal-smart","label":"Smart-dealer chart vs smart dealer","dealer":"smart","hands":20000000,"mean":-0.009514,"se":0.000271,"exact":-0.009875,"z":1.33,"win":0.4234,"loss":0.434075,"push":0.142525},{"id":"standAtMin-fixed","label":"Stand on 16+ (copy the dealer) vs fixed","dealer":"fixed","hands":4000000,"mean":-0.000078,"se":0.000576,"exact":0,"z":-0.14,"win":0.432776,"loss":0.432709,"push":0.134516},{"id":"casino17-fixed","label":"Casino habit: hit 16, stand 17+ vs fixed","dealer":"fixed","hands":4000000,"mean":0.028215,"se":0.00058,"exact":0.028295,"z":-0.14,"win":0.44124,"loss":0.420437,"push":0.138323},{"id":"dragonChaser-fixed","label":"Dragon chaser: always hit 4 cards vs fixed","dealer":"fixed","hands":4000000,"mean":-0.032671,"se":0.000587,"exact":-0.03229,"z":-0.65,"win":0.407203,"loss":0.455413,"push":0.137385}],"bust2":[{"id":"optimal-fixed","label":"Optimal chart vs fixed dealer","dealer":"fixed","hands":20000000,"mean":0.025682,"se":0.000267,"exact":0.026029,"z":-1.3,"win":0.444284,"loss":0.417626,"push":0.13809},{"id":"optimal-smart","label":"Smart-dealer chart vs smart dealer","dealer":"smart","hands":20000000,"mean":-0.03037,"se":0.000273,"exact":-0.030566,"z":0.72,"win":0.425578,"loss":0.432805,"push":0.141617},{"id":"standAtMin-fixed","label":"Stand on 16+ (copy the dealer) vs fixed","dealer":"fixed","hands":4000000,"mean":-0.007437,"se":0.00058,"exact":-0.006736,"z":-1.21,"win":0.432486,"loss":0.432959,"push":0.134556},{"id":"casino17-fixed","label":"Casino habit: hit 16, stand 17+ vs fixed","dealer":"fixed","hands":4000000,"mean":0.014086,"se":0.000589,"exact":0.015106,"z":-1.73,"win":0.441052,"loss":0.420719,"push":0.138229},{"id":"dragonChaser-fixed","label":"Dragon chaser: always hit 4 cards vs fixed","dealer":"fixed","hands":4000000,"mean":-0.081996,"se":0.000616,"exact":-0.080716,"z":-2.08,"win":0.406993,"loss":0.455584,"push":0.137423}]}}};</script>
 <script>/* Banluck Strategy Lab: page logic. Needs BanluckCore, BL_DATA and CORE_SRC globals. */
 (function () {
   'use strict';
@@ -883,6 +1332,68 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
     return `${n} cards, ${s === 's' ? (n === '2' ? 'Ace (11) + ' + (t - 11) : 'Ace counted as 10, total ' + t) : 'total ' + t}`;
   }
 
+  // ---------------- illustrated cards (inline SVG) ----------------
+  const SUIT_SHAPES = {
+    '♥': '<path d="M5 9.4C2.2 7.2 0 5.4 0 3.1 0 1.4 1.3 0 2.9 0 3.8 0 4.6.5 5 1.3 5.4.5 6.2 0 7.1 0 8.7 0 10 1.4 10 3.1 10 5.4 7.8 7.2 5 9.4Z"/>',
+    '♦': '<path d="M5 0 9 5 5 10 1 5Z"/>',
+    '♠': '<path d="M5 0C7.9 2.3 10 4.1 10 6 10 7.5 8.9 8.6 7.5 8.6 6.7 8.6 6 8.2 5.6 7.6L6.3 10H3.7L4.4 7.6C4 8.2 3.3 8.6 2.5 8.6 1.1 8.6 0 7.5 0 6 0 4.1 2.1 2.3 5 0Z"/>',
+    '♣': '<circle cx="5" cy="2.7" r="2.4"/><circle cx="2.5" cy="6.1" r="2.4"/><circle cx="7.5" cy="6.1" r="2.4"/><path d="M4.5 6 3.7 10h2.6L5.5 6Z"/>',
+  };
+  const PIPS = {
+    2: [[30, 18], [30, 66]],
+    3: [[30, 18], [30, 42], [30, 66]],
+    4: [[20, 18], [40, 18], [20, 66], [40, 66]],
+    5: [[20, 18], [40, 18], [30, 42], [20, 66], [40, 66]],
+    6: [[20, 18], [40, 18], [20, 42], [40, 42], [20, 66], [40, 66]],
+    7: [[20, 18], [40, 18], [30, 30], [20, 42], [40, 42], [20, 66], [40, 66]],
+    8: [[20, 18], [40, 18], [30, 30], [20, 42], [40, 42], [30, 54], [20, 66], [40, 66]],
+    9: [[20, 18], [40, 18], [20, 34], [40, 34], [30, 42], [20, 50], [40, 50], [20, 66], [40, 66]],
+    10: [[20, 18], [40, 18], [30, 26], [20, 34], [40, 34], [20, 50], [40, 50], [30, 58], [20, 66], [40, 66]],
+  };
+  const suitG = (st, cx, cy, size, flip) =>
+    `<g transform="translate(${cx} ${cy})${flip ? ' rotate(180)' : ''} scale(${size / 10}) translate(-5 -5)" fill="currentColor">${SUIT_SHAPES[st]}</g>`;
+  /** One playing card as an SVG string. label: A,2..10,J,Q,K · st: suit glyph · '?' blank · null back. */
+  function cardSvg(label, st, aria) {
+    const open = (cls) => `<svg class="pc${cls}" viewBox="0 0 60 84" ${aria ? `role="img" aria-label="${aria}"` : 'aria-hidden="true"'}><rect class="bg" x=".5" y=".5" width="59" height="83" rx="5"/>`;
+    if (label === null) {
+      return open('') + '<rect class="back" x="4" y="4" width="52" height="76" rx="3"/><rect class="lattice" x="7" y="7" width="46" height="70" rx="2"/>' +
+        '<path class="lattice" d="M30 14 50 42 30 70 10 42Z M30 22 44 42 30 62 16 42Z"/><text class="fu" x="30" y="47.5" font-size="14" text-anchor="middle">福</text></svg>';
+    }
+    if (label === '?') return open(' blank') + '<text class="q" x="30" y="51" font-size="26" text-anchor="middle">?</text></svg>';
+    const red = st === '♥' || st === '♦';
+    const fs = label === '10' ? 9 : 11;
+    const corner = `<text x="7.5" y="13" font-size="${fs}" text-anchor="middle">${label}</text>${suitG(st, 7.5, 19.5, 6)}`;
+    let body = '';
+    if (label === 'A') body = suitG(st, 30, 42, 22);
+    else if (label === 'J' || label === 'Q' || label === 'K') {
+      body = `<rect class="face" x="14" y="12" width="32" height="60" rx="3"/>${suitG(st, 30, 21, 7)}${suitG(st, 30, 63, 7, true)}` +
+        `<text x="30" y="50" font-size="22" text-anchor="middle">${label}</text>`;
+    } else body = PIPS[+label].map(([x, y]) => suitG(st, x, y, 9.5, y > 44)).join('');
+    return open(red ? ' red' : '') + corner + `<g transform="rotate(180 30 42)">${corner}</g>` + body + '</svg>';
+  }
+  /** Fill every <span class="hand-art" data-hand="A♠{11} 6♥ XX ??"> with drawn cards. */
+  function hydrateHands(root) {
+    (root || document).querySelectorAll('.hand-art[data-hand]').forEach((el) => {
+      const toks = el.dataset.hand.trim().split(/\s+/);
+      const fan = el.classList.contains('fan'), n = toks.length;
+      const names = [];
+      el.innerHTML = toks.map((t, i) => {
+        let svg, tag = '';
+        if (t === 'XX') { svg = cardSvg(null); names.push('face-down card'); }
+        else if (t === '??') { svg = cardSvg('?'); names.push('any card'); }
+        else {
+          const m = /^(10|[2-9AJQK])([♠♥♦♣])(?:\{([^}]*)\})?$/.exec(t);
+          if (!m) return '';
+          svg = cardSvg(m[1], m[2]); names.push(m[1] + m[2]);
+          if (m[3] !== undefined) tag = `<span class="tag">${esc(m[3])}</span>`;
+        }
+        const rot = fan ? ((i - (n - 1) / 2) * 5).toFixed(1) : 0;
+        return `<span class="slot${tag ? ' hl' : ''}" style="--rot:${rot}deg">${tag}${svg}</span>`;
+      }).join('');
+      if (!el.hasAttribute('aria-label')) { el.setAttribute('role', 'img'); el.setAttribute('aria-label', names.join(', ')); }
+    });
+  }
+
   // ---------------- the game ----------------
   const SUITS = ['♠', '♥', '♦', '♣'];
   const LABELS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -899,13 +1410,9 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
   const ranks = (h) => h.map((c) => c.r);
 
   function cardEl(c, faceDown) {
-    const el = document.createElement('div');
-    if (faceDown) { el.className = 'card back'; el.setAttribute('aria-label', 'face-down card'); return el; }
-    const red = c.suit === '♥' || c.suit === '♦';
-    el.className = 'card' + (red ? ' red' : '');
-    el.setAttribute('aria-label', c.label + c.suit);
-    el.innerHTML = `<span class="tl">${c.label}<small>${c.suit}</small></span><span class="mid">${c.suit}</span>`;
-    return el;
+    const tmp = document.createElement('span');
+    tmp.innerHTML = faceDown ? cardSvg(null, null, 'face-down card') : cardSvg(c.label, c.suit, c.label + c.suit);
+    return tmp.firstChild;
   }
   function renderHands() {
     const ph = $('#p-hand'), dh = $('#d-hand');
@@ -1267,18 +1774,15 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
     const H = rec === 1, mixed = S.dealer === 'smart' && info.hit > 0.1 && info.hit < 0.9;
     const strong = Math.abs(info.margin) >= 0.1;
     const name = cellName(`${n}|${t}|${s}`);
-    const title = `${name}: ${H ? 'hit' : 'stand'}. Hitting averages ${fmt(info.margin)} units vs standing.` + (mixed ? ` The solver hits ${Math.round(info.hit * 100)}% of the time.` : '');
+    const title = `${name}: ${H ? 'hit' : 'stand'}. Hit ${fmt(info.hitEV)}, stand ${fmt(info.standEV)} units per hand.` + (mixed ? ` The solver hits ${Math.round(info.hit * 100)}% of the time.` : '');
     const label = mixed ? (H ? 'Hit*' : 'Stand*') : H ? 'Hit' : 'Stand';
-    return `<td><div class="cell ${H ? 'H' : 'S'}${strong ? ' strong' : ''}${mixed ? ' mixed' : ''}" title="${esc(title)}">${label}<small>${fmt(info.margin, 2)}</small></div></td>`;
+    const hb = info.hitEV >= info.standEV;
+    const evs = `<span class="evs"><span${hb ? ' class="b"' : ''}>H ${fmt(info.hitEV, 2)}</span><span${hb ? '' : ' class="b"'}>S ${fmt(info.standEV, 2)}</span></span>`;
+    return `<td><div class="cell ${H ? 'H' : 'S'}${strong ? ' strong' : ''}${mixed ? ' mixed' : ''}" title="${esc(title)}">${label}${evs}</div></td>`;
   }
   function renderChart() {
     const v = V(), info = chartInfo(), pure = playerChart();
     $('#chart-title').textContent = `Basic strategy vs the ${dealerLabel()} (${bustLabel()})`;
-    const best = S.dealer === 'fixed' ? v.fixed.chartEV : v.smart.pureChartVsEqDealer;
-    const base = S.dealer === 'fixed' ? v.fixed.baselines : Object.fromEntries(Object.entries(v.smart.baselines).map(([k, b]) => [k, { name: b.name, ev: b.evVsEq }]));
-    let chips = `<div class="chip"><span class="k">Your edge with this chart</span><span class="v ${best >= 0 ? 'pos' : 'neg'}">${pct(best)}</span></div>`;
-    for (const b of Object.values(base)) chips += `<div class="chip"><span class="k">${esc(b.name)}</span><span class="v ${b.ev >= 0 ? 'pos' : 'neg'}">${pct(b.ev)}</span></div>`;
-    $('#chart-summary').innerHTML = chips;
 
     let html = '<thead><tr><th></th><th>2 cards</th><th>3 cards</th><th>4 cards</th></tr></thead><tbody>';
     html += '<tr class="group"><th colspan="4">Hard hands: no Ace, or every Ace counted as 1</th></tr>';
@@ -1325,11 +1829,134 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
     $('#banker').innerHTML = bh;
   }
 
+  // ---------------- who has the edge ----------------
+  const STRATS = [
+    ['chartFixed', 'Chart for the fixed banker'],
+    ['chartSmart', 'Chart for the smart banker'],
+    ['standAtMin', 'Copy the dealer: stand on 16+'],
+    ['casino17', 'Casino habit: hit 16, stand 17+'],
+    ['dragonChaser', 'Dragon chaser: always hit 4 cards'],
+  ];
+  function edgeFor(v, sid, col) {
+    if (col === 'fixed') return sid === 'chartFixed' ? v.fixed.chartEV : sid === 'chartSmart' ? v.smart.pureChartVsFixedDealer : v.fixed.baselines[sid].ev;
+    if (col === 'smart') return sid === 'chartFixed' ? v.smart.fixedChartVsEqDealer : sid === 'chartSmart' ? v.smart.pureChartVsEqDealer : v.smart.baselines[sid].evVsEq;
+    return sid === 'chartFixed' ? v.smart.fixedChartVsDealerBR : sid === 'chartSmart' ? v.smart.pureChartVsDealerBR : v.smart.baselines[sid].evVsBR;
+  }
+  const edgeText = (x) => `${Math.abs(x * 100).toFixed(2)}%`;
+  function renderEdge() {
+    const v = V(), best = S.dealer === 'fixed' ? v.fixed.chartEV : v.smart.pureChartVsEqDealer;
+    $('#edge-ctx').textContent = `Best chart vs the ${dealerLabel()} · ${bustLabel()}`;
+    const who = $('#edge-who'), val = $('#edge-val');
+    who.textContent = best >= 0 ? "Player's edge" : "Banker's edge";
+    val.textContent = edgeText(best);
+    val.className = 'num ' + (best >= 0 ? 'pos' : 'neg');
+    const amt = Math.abs(best);
+    $('#edge-money').textContent = `Betting $10 a hand, you ${best >= 0 ? 'win' : 'lose'} about $${(amt * 10).toFixed(2)} a hand on average: roughly $${Math.round(amt * 1000)} over 100 hands.`;
+    const run = D.mc && D.mc.variants[S.variant] && D.mc.variants[S.variant].find((r) => r.id === (S.dealer === 'fixed' ? 'optimal-fixed' : 'optimal-smart'));
+    if (run) {
+      const w = run.win * 100, pu = run.push * 100, l = run.loss * 100;
+      $('#edge-wlp').innerHTML = `<div class="seg-win" style="flex:${w}"></div><div class="seg-push" style="flex:${pu}"></div><div class="seg-lose" style="flex:${l}"></div>`;
+      $('#edge-wlp').setAttribute('aria-label', `You win ${w.toFixed(1)}% of hands, push ${pu.toFixed(1)}%, lose ${l.toFixed(1)}%.`);
+      $('#edge-wlp-key').innerHTML = `<li><i class="seg-win"></i>You win <span class="mono">${w.toFixed(1)}%</span></li><li><i class="seg-push"></i>Push <span class="mono">${pu.toFixed(1)}%</span></li><li><i class="seg-lose"></i>You lose <span class="mono">${l.toFixed(1)}%</span></li>`;
+    }
+    const oid = S.variant === 'bust2' ? 'bust1' : 'bust2', o = D.variants[oid];
+    $('#edge-other').textContent = `Hands won and lost from ${(run ? run.hands / 1e6 : 20).toFixed(0)} million simulated hands. Bonus multiples sit on top of these counts. With the other rule (five-card bust ${oid === 'bust2' ? '2×' : '1×'}), best play is ${pct(o.fixed.chartEV)} vs the fixed banker and ${pct(o.smart.pureChartVsEqDealer)} vs the smart one.`;
+
+    const cols = [['fixed', 'Fixed banker'], ['smart', 'Smart banker'], ['br', 'Banker who knows your strategy']];
+    let max = 0;
+    for (const [sid] of STRATS) for (const [c] of cols) max = Math.max(max, Math.abs(edgeFor(v, sid, c)));
+    let html = '<thead><tr><th>Your strategy</th>' + cols.map(([c, n]) => `<th>${n}</th>`).join('') + '</tr></thead><tbody>';
+    for (const [sid, nm] of STRATS) {
+      const name = nm;
+      html += `<tr><td>${esc(name)}</td>`;
+      for (const [c] of cols) {
+        const x = edgeFor(v, sid, c), w = (Math.abs(x) / max * 50).toFixed(1);
+        html += `<td class="${c === S.dealer ? 'cur' : ''}"><div class="ebar"><div class="track"><div class="bar ${x >= 0 ? 'p' : 'b'}" style="${x >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div>` +
+          `<span class="v ${x >= 0 ? 'pos' : 'neg'}">${edgeText(x)}<small>${x >= 0 ? 'player' : 'banker'}</small></span></div></td>`;
+      }
+      html += '</tr>';
+    }
+    $('#edge-table').innerHTML = html + '</tbody>';
+    const copy = -v.smart.baselines.standAtMin.evVsEq;
+    $('#edge-bank').textContent = `Holding the bank? Read the table from the other side. A smart banker keeps ${edgeText(copy)} of every bet from players who copy the dealer. With four of them betting $10 each, that is about $${(copy * 40).toFixed(2)} a round. "Knows your strategy" is a banker who has watched you long enough to exploit your exact chart.`;
+  }
+
+  // ---------------- EV bars (why tab) and EV dumbbell (chart tab) ----------------
+  function evTitle(key) {
+    const [n, t, s] = key.split('|'), N = { 2: 'Two', 3: 'Three', 4: 'Four' }[n];
+    if (s === 's') return n === '2' ? `A-${t - 11} (${t})` : `${N} cards, Ace as 10: ${t}`;
+    return `${N}-card hard ${t}`;
+  }
+  function renderEvBars() {
+    const info = chartInfo();
+    $$('.evbars[data-ev]').forEach((el) => {
+      const k = el.dataset.ev, x = info[k];
+      if (!x) { el.innerHTML = ''; return; }
+      const hb = x.hitEV >= x.standEV;
+      const row = (lab, cls, val, best) => {
+        const w = (Math.min(1, Math.abs(val)) * 50).toFixed(1);
+        return `<div class="evrow${best ? ' best' : ''}"><span class="lab">${lab}</span><div class="evtrack"><div class="evbar ${cls}" style="${val >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div><span class="val">${fmt(val, 2)}</span></div>`;
+      };
+      el.innerHTML = `<div class="ev-title">${esc(evTitle(k))}</div>` + row('Stand', 'S', x.standEV, !hb) + row('Hit', 'H', x.hitEV, hb) +
+        `<div class="ev-note">${hb ? 'Hitting' : 'Standing'} is better by ${Math.abs(x.hitEV - x.standEV).toFixed(2)} units · ${dealerLabel()}, ${bustLabel()}</div>`;
+    });
+  }
+  function renderDumbbell() {
+    const info = chartInfo(), pure = playerChart();
+    const W = 320, L = 52, R = 14, T = 26, RH = 19, lo = -1.6, hi = 1.0;
+    const x = (v) => L + (W - L - R) * (v - lo) / (hi - lo);
+    const facets = [[2, 'Two cards'], [3, 'Three cards'], [4, 'Four cards']];
+    $('#dumb').innerHTML = facets.map(([n, title]) => {
+      const rows = [];
+      for (const s of ['h', 's']) {
+        const ks = [];
+        for (let t = 16; t <= 21; t++) if (info[`${n}|${t}|${s}`]) ks.push(`${n}|${t}|${s}`);
+        if (ks.length) rows.push({ head: s === 'h' ? 'Hard' : 'Ace high' }, ...ks.map((k) => ({ k })));
+      }
+      const H = T + rows.length * RH + 6;
+      let g = '';
+      for (const v of [-1.5, -1, -0.5, 0, 0.5, 1]) {
+        g += `<line x1="${x(v)}" x2="${x(v)}" y1="${T - 6}" y2="${H - 4}" style="stroke:var(--${v === 0 ? 'muted' : 'line'})" stroke-width="1"/>` +
+          `<text x="${x(v)}" y="${T - 12}" text-anchor="middle" font-size="10" style="fill:var(--muted)" font-family="var(--font-mono)">${v === 0 ? '0' : fmt(v, 1)}</text>`;
+      }
+      rows.forEach((r, i) => {
+        const y = T + i * RH + RH / 2;
+        if (r.head) { g += `<text x="0" y="${y + 4}" font-size="10.5" font-weight="600" style="fill:var(--muted)" letter-spacing=".04em">${r.head.toUpperCase()}</text>`; return; }
+        const d = info[r.k], hitIt = pure[r.k] === 1, t = r.k.split('|')[1];
+        const xs = x(d.standEV), xh = x(d.hitEV);
+        const tip = `${evTitle(r.k)}: hit ${fmt(d.hitEV, 3)}, stand ${fmt(d.standEV, 3)}. Chart: ${hitIt ? 'hit' : 'stand'}.`;
+        g += `<text x="${L - 10}" y="${y + 4}" text-anchor="end" font-size="11.5" style="fill:var(--ink)" font-family="var(--font-mono)">${r.k.endsWith('s') ? 'A·' : ''}${t}</text>` +
+          `<line x1="${xs}" x2="${xh}" y1="${y}" y2="${y}" style="stroke:var(--muted)" stroke-width="2" stroke-linecap="round"/>` +
+          `<circle cx="${xs}" cy="${y}" r="${hitIt ? 3.5 : 6}" style="fill:var(--stand);stroke:var(--surface)" stroke-width="2"/>` +
+          `<circle cx="${xh}" cy="${y}" r="${hitIt ? 6 : 3.5}" style="fill:var(--cinnabar);stroke:var(--surface)" stroke-width="2"/>` +
+          `<rect class="rowhit" x="0" y="${y - RH / 2}" width="${W}" height="${RH}" data-tip="${esc(tip)}"/>`;
+      });
+      return `<figure><figcaption class="eyebrow">${title}</figcaption><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}: expected value of hitting and standing for each total">${g}</svg><div class="tip" hidden></div></figure>`;
+    }).join('');
+    $$('#dumb figure').forEach((fig) => {
+      const tip = fig.querySelector('.tip'), svg = fig.querySelector('svg');
+      fig.querySelectorAll('.rowhit').forEach((r) => {
+        const show = () => {
+          const fr = fig.getBoundingClientRect(), rr = r.getBoundingClientRect();
+          tip.textContent = r.dataset.tip; tip.hidden = false;
+          tip.style.left = Math.min(Math.max(fr.width / 2, 120), fr.width - 120) + 'px';
+          tip.style.top = (rr.top - fr.top) + 'px';
+        };
+        r.addEventListener('pointerenter', show);
+        r.addEventListener('click', show);
+      });
+      svg.addEventListener('pointerleave', () => { tip.hidden = true; });
+    });
+  }
+
   // ---------------- dynamic numbers in rules / why ----------------
   function renderNumbers() {
     const v = V();
     const edge = S.dealer === 'fixed' ? v.fixed.chartEV : v.smart.pureChartVsEqDealer;
-    $('#rules-edge').textContent = `${edge >= 0 ? 'No house edge: you gain' : 'The banker gains'} about ${Math.abs(edge * 100).toFixed(1)}% per hand (${dealerLabel()}, ${bustLabel()})`;
+    $('#rules-edge').textContent = `${edge >= 0 ? 'No house edge: the player keeps' : 'The banker keeps'} ${Math.abs(edge * 100).toFixed(1)}% per hand (${dealerLabel()}, ${bustLabel()}).`;
+    const tok = $('#rules-edge-tok');
+    tok.textContent = pct(edge, 1);
+    tok.className = 'tok ' + (edge >= 0 ? 'pos' : 'neg');
     $$('[data-num]').forEach((el) => {
       const path = el.dataset.num.split('.');
       let x = D.variants;
@@ -1343,9 +1970,13 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
     renderHands();
     refreshMcLabels();
     renderChart();
+    renderEdge();
+    renderDumbbell();
+    renderEvBars();
     renderNumbers();
   }
 
+  hydrateHands();
   bindSegs(); bindTabs(); bindGame();
   $('#mc-run').addEventListener('click', runMc);
   $('#mc-stop').addEventListener('click', () => { stopMc(); $('#mc-status').textContent = 'Stopped.'; });
