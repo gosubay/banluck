@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /*
- * Monte Carlo verification: deal real shuffled single-deck hands and play the
- * solved charts. Results should match the exact solver within ~2 standard errors.
+ * Monte Carlo verification: deal real shuffled single-deck hands with the banker
+ * playing the solved (optimal) banker strategy. Results should match the exact
+ * solver within ~2 standard errors.
  *
  * Usage: node solver/montecarlo.js [--hands 20000000] [--in data/solution.json]
  * Writes data/montecarlo.json. Uses one worker thread per CPU core.
@@ -27,7 +28,7 @@ if (!isMainThread) {
 const args = process.argv.slice(2);
 const argVal = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const HANDS = +argVal('--hands', 20000000);
-const BASE_HANDS = +argVal('--baseline-hands', 4000000);
+const BASE_HANDS = +argVal('--baseline-hands', 20000000);
 const IN = argVal('--in', path.join(__dirname, '..', 'data', 'solution.json'));
 const OUT = argVal('--out', path.join(__dirname, '..', 'data', 'montecarlo.json'));
 const sol = JSON.parse(fs.readFileSync(IN, 'utf8'));
@@ -62,13 +63,13 @@ function runParallel(job, hands, seedBase) {
       const t0 = Date.now();
       const mc = await runParallel({ rules, playerChart, dealerChart: dealer }, hands, seed++);
       const z = (mc.mean - exact) / mc.se;
-      runs.push({ id, label, dealer: dealer ? 'smart' : 'fixed', exact, ...mc, z, seconds: (Date.now() - t0) / 1000 });
+      runs.push({ id, label, exact, ...mc, z, seconds: (Date.now() - t0) / 1000 });
       console.log(`${vid} ${label.padEnd(48)} MC ${mc.mean.toFixed(5)} ± ${mc.se.toFixed(5)}  exact ${exact.toFixed(5)}  z=${z.toFixed(2)}  (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
     };
-    await add('optimal-fixed', 'Optimal chart vs fixed dealer', v.fixed.pureChart, null, v.fixed.chartEV, HANDS);
-    await add('optimal-smart', 'Smart-dealer chart vs smart dealer', v.smart.pureChart, v.smart.dealerChart, v.smart.pureChartVsEqDealer, HANDS);
-    for (const [bid, b] of Object.entries(v.fixed.baselines)) {
-      await add(bid + '-fixed', b.name + ' vs fixed', v.baselineCharts[bid], null, b.ev, BASE_HANDS);
+    const banker = v.smart.dealerChart;
+    await add('optimal', 'Optimal chart', v.smart.pureChart, banker, v.smart.pureChartVsEqDealer, HANDS);
+    for (const [bid, b] of Object.entries(v.smart.baselines)) {
+      await add(bid, b.name, v.baselineCharts[bid], banker, b.evVsEq, BASE_HANDS);
     }
     out.variants[vid] = runs;
   }

@@ -251,7 +251,7 @@
     },
     "baselines": {
      "standAtMin": {
-      "name": "Stand on 16+ (copy the dealer)",
+      "name": "Stand on 16+ (copy the banker)",
       "ev": 4.185020385794047e-17
      },
      "casino17": {
@@ -1173,7 +1173,7 @@
     "fixedChartVsDealerBR": -0.014878392506739557,
     "baselines": {
      "standAtMin": {
-      "name": "Stand on 16+ (copy the dealer)",
+      "name": "Stand on 16+ (copy the banker)",
       "evVsEq": -0.04720205853855822,
       "evVsBR": -0.04998335101196623
      },
@@ -1532,7 +1532,7 @@
     },
     "baselines": {
      "standAtMin": {
-      "name": "Stand on 16+ (copy the dealer)",
+      "name": "Stand on 16+ (copy the banker)",
       "ev": -0.00673572728956135
      },
      "casino17": {
@@ -2454,7 +2454,7 @@
     "fixedChartVsDealerBR": -0.035404511938028904,
     "baselines": {
      "standAtMin": {
-      "name": "Stand on 16+ (copy the dealer)",
+      "name": "Stand on 16+ (copy the banker)",
       "evVsEq": -0.05373786273975385,
       "evVsBR": -0.056515932499534446
      },

@@ -108,7 +108,7 @@
     </div>
     <div class="vs-grid">
       <div class="vs">
-        <div class="eyebrow">Dealer's cards</div>
+        <div class="eyebrow">Banker's cards</div>
         <div class="vs-row bl"><span class="who">Banluck</span><span class="hand-art sm" data-hand="XX XX"></span><span>Both face down. You see nothing.</span></div>
         <div class="vs-row cs"><span class="who">Casino</span><span class="hand-art sm" data-hand="K♠ XX"></span><span>One upcard to plan around.</span></div>
       </div>
@@ -157,12 +157,11 @@
 
   <div class="two-col">
     <details class="more">
-      <summary>Settings fixed for the solver</summary>
+      <summary>Assumptions behind the solver</summary>
       <ul>
         <li>One player against the banker, 1-unit bets.</li>
         <li>A fresh 52-card deck every hand, so card-removal odds are exact.</li>
-        <li><b>Fixed banker:</b> hits below 16, stands on any 16 or more.</li>
-        <li><b>Smart banker:</b> sees your card count and plays to hurt you most. Solved as a two-player game with CFR+, to within 0.002% per hand.</li>
+        <li>Both sides play optimally. The banker sees your card count and plays his best reply; you play yours. Solved as a two-player game with CFR+, to within 0.002% per hand.</li>
         <li>The five-card bust penalty is for players only. A banker who busts on five cards pays 1×.</li>
         <li>Your strategy uses only your own cards.</li>
       </ul>
@@ -170,7 +169,7 @@
     <details class="more">
       <summary>Not modelled</summary>
       <ul>
-        <li>Several players at one table. A real banker can reveal some players at 16 or 17, then keep drawing against the rest. The smart banker captures the core of that: playing differently by how many cards you hold.</li>
+        <li>Several players at one table. A real banker can reveal some players at 16 or 17, then keep drawing against the rest. The solved banker captures the core of that: playing differently by how many cards you hold.</li>
         <li>Playing several hands from one deck without reshuffling (card counting).</li>
       </ul>
     </details>

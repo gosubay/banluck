@@ -18,26 +18,21 @@ const r4 = (x) => +x.toFixed(6);
 const data = { generated: sol.generated, compositions: sol.compositions, variants: {}, mc: null };
 for (const [id, v] of Object.entries(sol.variants)) {
   const s = v.smart;
+  // The site shows only the equilibrium: both sides play optimally. The solver's
+  // fixed-banker results stay in data/solution.json but are not shipped.
   data.variants[id] = {
     rules: v.rules,
-    fixed: {
-      optimalEV: r4(v.fixed.optimalEV), chartEV: r4(v.fixed.chartEV), chart: v.fixed.chart, pureChart: v.fixed.pureChart,
-      baselines: Object.fromEntries(Object.entries(v.fixed.baselines).map(([k, b]) => [k, { name: b.name, ev: r4(b.ev) }])),
-    },
-    smart: {
-      value: r4(s.value), exploitability: s.exploitability, chart: s.chart, pureChart: s.pureChart, dealerChart: s.dealerChart, dealerEV: s.dealerEV,
-      pureChartVsEqDealer: r4(s.pureChartVsEqDealer), pureChartVsDealerBR: r4(s.pureChartVsDealerBR),
-      pureChartVsFixedDealer: r4(s.pureChartVsFixedDealer), fixedChartVsEqDealer: r4(s.fixedChartVsEqDealer),
-      fixedChartVsDealerBR: r4(s.fixedChartVsDealerBR),
-      baselines: Object.fromEntries(Object.entries(s.baselines).map(([k, b]) => [k, { name: b.name, evVsEq: r4(b.evVsEq), evVsBR: r4(b.evVsBR) }])),
-    },
+    value: r4(s.value), exploitability: s.exploitability,
+    chart: s.chart, pureChart: s.pureChart, bankerChart: s.dealerChart, bankerEV: s.dealerEV,
+    chartEV: r4(s.pureChartVsEqDealer), chartVsBR: r4(s.pureChartVsDealerBR),
+    baselines: Object.fromEntries(Object.entries(s.baselines).map(([k, b]) => [k, { name: b.name, evVsEq: r4(b.evVsEq), evVsBR: r4(b.evVsBR) }])),
     baselineCharts: v.baselineCharts,
   };
 }
 if (mc) {
   data.mc = { generated: mc.generated, variants: {} };
   for (const [id, runs] of Object.entries(mc.variants))
-    data.mc.variants[id] = runs.map((r) => ({ id: r.id, label: r.label, dealer: r.dealer, hands: r.hands, mean: r4(r.mean), se: r4(r.se), exact: r4(r.exact), z: +r.z.toFixed(2), win: r4(r.win), loss: r4(r.loss), push: r4(r.push) }));
+    data.mc.variants[id] = runs.map((r) => ({ id: r.id, label: r.label, hands: r.hands, mean: r4(r.mean), se: r4(r.se), exact: r4(r.exact), z: +r.z.toFixed(2), win: r4(r.win), loss: r4(r.loss), push: r4(r.push) }));
 }
 
 const safe = (s) => s.replace(/<\/(script)/gi, '<\\/$1');

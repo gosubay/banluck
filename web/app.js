@@ -9,36 +9,31 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   // ---------------- settings ----------------
-  const S = { variant: 'bust2', dealer: 'fixed', coach: true };
+  const S = { variant: 'bust2', coach: true };
   try {
     const saved = JSON.parse(localStorage.getItem('banluck-lab') || '{}');
     if (saved.variant in D.variants) S.variant = saved.variant;
-    if (saved.dealer === 'fixed' || saved.dealer === 'smart') S.dealer = saved.dealer;
     if (typeof saved.coach === 'boolean') S.coach = saved.coach;
   } catch (e) { /* storage unavailable */ }
   const save = () => { try { localStorage.setItem('banluck-lab', JSON.stringify(S)); } catch (e) { /* ignore */ } };
 
   const V = () => D.variants[S.variant];
   const rules = () => V().rules;
-  const playerChart = () => (S.dealer === 'fixed' ? V().fixed.pureChart : V().smart.pureChart);
-  const chartInfo = () => (S.dealer === 'fixed' ? V().fixed.chart : V().smart.chart);
-  const dealerPolicy = () => (S.dealer === 'fixed' ? C.standOnMin : C.dealerChartPolicy(V().smart.dealerChart));
+  // Both sides play the solved equilibrium: the player follows the chart, the banker his chart.
+  const playerChart = () => V().pureChart;
+  const chartInfo = () => V().chart;
+  const dealerPolicy = () => C.dealerChartPolicy(V().bankerChart);
   const bustLabel = () => (S.variant === 'bust2' ? 'five-card bust loses 2×' : 'five-card bust loses 1×');
-  const dealerLabel = () => (S.dealer === 'fixed' ? 'fixed dealer' : 'smart dealer');
 
-  // Header switches, Settings option cards and the combination table all set the same two choices.
+  // The header switch and the Settings option cards set the same choice.
   function bindSegs() {
-    $$('#seg-variant button, #seg-dealer button, .opt, .combo-cell').forEach((b) => b.addEventListener('click', () => {
-      if (b.dataset.v) S.variant = b.dataset.v;
-      if (b.dataset.d) S.dealer = b.dataset.d;
+    $$('#seg-variant button, .opt').forEach((b) => b.addEventListener('click', () => {
+      S.variant = b.dataset.v;
       save(); refreshAll();
     }));
   }
   function syncSegs() {
-    $$('#seg-variant button, #seg-dealer button, .opt, .combo-cell').forEach((b) => {
-      const on = (!b.dataset.v || b.dataset.v === S.variant) && (!b.dataset.d || b.dataset.d === S.dealer);
-      b.setAttribute('aria-pressed', String(on));
-    });
+    $$('#seg-variant button, .opt').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === S.variant)));
   }
 
   // ---------------- tabs ----------------
@@ -314,7 +309,7 @@
     const rec = $('#coach-rec'), why = $('#coach-why');
     if (G.phase !== 'player') {
       rec.innerHTML = '<span class="pill forced">Waiting</span><span>' + (G.phase === 'dealer' ? 'Banker is playing.' : 'Deal a hand.') + '</span>';
-      why.textContent = `Advice follows the chart for the ${dealerLabel()} with ${bustLabel()}.`;
+      why.textContent = `Advice follows the strategy chart with ${bustLabel()}.`;
       $('#b-hit').classList.remove('suggest'); $('#b-stand').classList.remove('suggest');
       return;
     }
@@ -331,7 +326,7 @@
       sug = hitIt ? 'hit' : 'stand';
       if (mixed) {
         pill = `<span class="pill mix">Either</span>`; line = `Close call on ${cellName(key)}.`;
-        detail = `Against the smart dealer the solver hits ${Math.round(info.hit * 100)}% of the time here, so the banker can't read you. The difference is ${Math.abs(info.margin).toFixed(3)} units.`;
+        detail = `The solver hits ${Math.round(info.hit * 100)}% of the time here, so the banker can't read you. The difference is ${Math.abs(info.margin).toFixed(3)} units.`;
       } else {
         pill = `<span class="pill ${sug}">${sug}</span>`; line = `${cellName(key)}.`;
         detail = `Hitting here averages ${fmt(info.margin)} units compared with standing.`;
@@ -365,7 +360,7 @@
     var C = self.BanluckCore, m = e.data;
     var shoe = new C.Shoe(C.rng(m.seed), m.rules.decks);
     var pp = C.chartPolicy(m.playerChart);
-    var dp = m.dealerChart ? C.dealerChartPolicy(m.dealerChart) : C.standOnMin;
+    var dp = C.dealerChartPolicy(m.dealerChart);
     var sum = 0, sq = 0, w = 0, l = 0, pu = 0, t = {}, i = 0;
     var chunk = Math.max(5000, Math.floor(m.hands / 120));
     function bump(k) { t[k] = (t[k] || 0) + 1; }
@@ -394,23 +389,13 @@
   const MC = { points: [], exact: 0, total: 0 };
 
   function strategyChart(id) {
-    if (id === 'chartFixed') return V().fixed.pureChart;
-    if (id === 'chartSmart') return V().smart.pureChart;
-    return V().baselineCharts[id];
+    return id === 'chart' ? V().pureChart : V().baselineCharts[id];
   }
   function exactFor(id) {
-    const v = V();
-    if (S.dealer === 'fixed') {
-      if (id === 'chartFixed') return v.fixed.chartEV;
-      if (id === 'chartSmart') return v.smart.pureChartVsFixedDealer;
-      return v.fixed.baselines[id].ev;
-    }
-    if (id === 'chartFixed') return v.smart.fixedChartVsEqDealer;
-    if (id === 'chartSmart') return v.smart.pureChartVsEqDealer;
-    return v.smart.baselines[id].evVsEq;
+    return id === 'chart' ? V().chartEV : V().baselines[id].evVsEq;
   }
   function refreshMcLabels() {
-    $('#mc-against').textContent = `Against: ${dealerLabel()} · ${bustLabel()}. Change these at the top.`;
+    $('#mc-against').textContent = `The banker plays his optimal chart · ${bustLabel()}. Change the rule at the top.`;
     MC.exact = exactFor($('#mc-strategy').value);
     $('#mc-exact').textContent = fmt(MC.exact, 4) + ` (${pct(MC.exact)})`;
   }
@@ -444,7 +429,7 @@
         stopMc();
       }
     };
-    worker.postMessage({ rules: rules(), playerChart: strategyChart(id), dealerChart: S.dealer === 'smart' ? V().smart.dealerChart : null, hands, seed: (Math.random() * 2 ** 31) | 0 });
+    worker.postMessage({ rules: rules(), playerChart: strategyChart(id), dealerChart: V().bankerChart, hands, seed: (Math.random() * 2 ** 31) | 0 });
   }
   function renderBreakdown(m) {
     const rows = [['Hands won', m.win], ['Hands lost', m.loss], ['Pushes', m.push]];
@@ -531,7 +516,7 @@
   // ---------------- strategy chart tab ----------------
   function cellHtml(info, rec, n, t, s) {
     if (!info) return '<td><div class="cell na" title="This hand cannot happen">—</div></td>';
-    const H = rec === 1, mixed = S.dealer === 'smart' && info.hit > 0.1 && info.hit < 0.9;
+    const H = rec === 1, mixed = info.hit > 0.1 && info.hit < 0.9;
     const strong = Math.abs(info.margin) >= 0.1;
     const name = cellName(`${n}|${t}|${s}`);
     const title = `${name}: ${H ? 'hit' : 'stand'}. Hit ${fmt(info.hitEV)}, stand ${fmt(info.standEV)} units per hand.` + (mixed ? ` The solver hits ${Math.round(info.hit * 100)}% of the time.` : '');
@@ -542,7 +527,7 @@
   }
   function renderChart() {
     const v = V(), info = chartInfo(), pure = playerChart();
-    $('#chart-title').textContent = `Basic strategy vs the ${dealerLabel()} (${bustLabel()})`;
+    $('#chart-title').textContent = `Basic strategy (${bustLabel()})`;
 
     let html = '<thead><tr><th></th><th>2 cards</th><th>3 cards</th><th>4 cards</th></tr></thead><tbody>';
     html += '<tr class="group"><th colspan="4">Hard hands: no Ace, or every Ace counted as 1</th></tr>';
@@ -561,14 +546,10 @@
     }
     html += '<tr class="group"><th colspan="4">Five cards: your hand stops automatically</th></tr></tbody>';
     $('#strat').innerHTML = html;
-    $('#legend-mix').hidden = S.dealer !== 'smart';
 
-    // banker chart: when to open each player (smart banker equilibrium)
-    const dc = v.smart.dealerChart, dev = v.smart.dealerEV || {};
-    $('#banker-note').textContent = (S.dealer === 'fixed'
-      ? 'The fixed banker ignores this and stands on any 16+. This is how a smart banker should play: '
-      : 'This is the banker you are playing against: ') +
-      `for each of his hands, open or keep drawing depending on how many cards the player holds (${bustLabel()}).`;
+    // banker chart: when to open each player (equilibrium banker strategy)
+    const dc = v.bankerChart, dev = v.bankerEV || {};
+    $('#banker-note').textContent = `For each of his hands, open or keep drawing depending on how many cards the player holds (${bustLabel()}). This is also how the banker plays in the Play tab.`;
     const NAMES = { 2: 'Two cards', 3: 'Three cards', 4: 'Four cards' };
     let bh = '';
     for (const n of [2, 3, 4]) {
@@ -604,28 +585,26 @@
 
   // ---------------- who has the edge ----------------
   const STRATS = [
-    ['chartFixed', 'Chart for the fixed banker'],
-    ['chartSmart', 'Chart for the smart banker'],
-    ['standAtMin', 'Copy the dealer: stand on 16+'],
+    ['chart', 'The strategy chart'],
+    ['standAtMin', 'Copy the banker: stand on 16+'],
     ['casino17', 'Casino habit: hit 16, stand 17+'],
     ['dragonChaser', 'Dragon chaser: always hit 4 cards'],
   ];
   function edgeFor(v, sid, col) {
-    if (col === 'fixed') return sid === 'chartFixed' ? v.fixed.chartEV : sid === 'chartSmart' ? v.smart.pureChartVsFixedDealer : v.fixed.baselines[sid].ev;
-    if (col === 'smart') return sid === 'chartFixed' ? v.smart.fixedChartVsEqDealer : sid === 'chartSmart' ? v.smart.pureChartVsEqDealer : v.smart.baselines[sid].evVsEq;
-    return sid === 'chartFixed' ? v.smart.fixedChartVsDealerBR : sid === 'chartSmart' ? v.smart.pureChartVsDealerBR : v.smart.baselines[sid].evVsBR;
+    if (col === 'eq') return sid === 'chart' ? v.chartEV : v.baselines[sid].evVsEq;
+    return sid === 'chart' ? v.chartVsBR : v.baselines[sid].evVsBR;
   }
   const edgeText = (x) => `${Math.abs(x * 100).toFixed(2)}%`;
   function renderEdge() {
-    const v = V(), best = S.dealer === 'fixed' ? v.fixed.chartEV : v.smart.pureChartVsEqDealer;
-    $('#edge-ctx').textContent = `Best chart vs the ${dealerLabel()} · ${bustLabel()}`;
+    const v = V(), best = v.chartEV;
+    $('#edge-ctx').textContent = `Both sides playing optimally · ${bustLabel()}`;
     const who = $('#edge-who'), val = $('#edge-val');
     who.textContent = best >= 0 ? "Player's edge" : "Banker's edge";
     val.textContent = edgeText(best);
     val.className = 'num ' + (best >= 0 ? 'pos' : 'neg');
     const amt = Math.abs(best);
     $('#edge-money').textContent = `Betting $10 a hand, you ${best >= 0 ? 'win' : 'lose'} about $${(amt * 10).toFixed(2)} a hand on average: roughly $${Math.round(amt * 1000)} over 100 hands.`;
-    const run = D.mc && D.mc.variants[S.variant] && D.mc.variants[S.variant].find((r) => r.id === (S.dealer === 'fixed' ? 'optimal-fixed' : 'optimal-smart'));
+    const run = D.mc && D.mc.variants[S.variant] && D.mc.variants[S.variant].find((r) => r.id === 'optimal');
     if (run) {
       const w = run.win * 100, pu = run.push * 100, l = run.loss * 100;
       $('#edge-wlp').innerHTML = `<div class="seg-win" style="flex:${w}"></div><div class="seg-push" style="flex:${pu}"></div><div class="seg-lose" style="flex:${l}"></div>`;
@@ -633,9 +612,9 @@
       $('#edge-wlp-key').innerHTML = `<li><i class="seg-win"></i>You win <span class="mono">${w.toFixed(1)}%</span></li><li><i class="seg-push"></i>Push <span class="mono">${pu.toFixed(1)}%</span></li><li><i class="seg-lose"></i>You lose <span class="mono">${l.toFixed(1)}%</span></li>`;
     }
     const oid = S.variant === 'bust2' ? 'bust1' : 'bust2', o = D.variants[oid];
-    $('#edge-other').textContent = `Hands won and lost from ${(run ? run.hands / 1e6 : 20).toFixed(0)} million simulated hands. Bonus multiples sit on top of these counts. With the other rule (five-card bust ${oid === 'bust2' ? '2×' : '1×'}), best play is ${pct(o.fixed.chartEV)} vs the fixed banker and ${pct(o.smart.pureChartVsEqDealer)} vs the smart one.`;
+    $('#edge-other').textContent = `Hands won and lost from ${(run ? run.hands / 1e6 : 20).toFixed(0)} million simulated hands. Bonus multiples sit on top of these counts. With the other rule (five-card bust ${oid === 'bust2' ? '2×' : '1×'}), the edge is ${edgeText(o.chartEV)} for the ${o.chartEV >= 0 ? 'player' : 'banker'}.`;
 
-    const cols = [['fixed', 'Fixed banker'], ['smart', 'Smart banker'], ['br', 'Banker who knows your strategy']];
+    const cols = [['eq', 'Optimal banker'], ['br', 'Banker who knows your strategy']];
     let max = 0;
     for (const [sid] of STRATS) for (const [c] of cols) max = Math.max(max, Math.abs(edgeFor(v, sid, c)));
     let html = '<thead><tr><th>Your strategy</th>' + cols.map(([c, n]) => `<th>${n}</th>`).join('') + '</tr></thead><tbody>';
@@ -644,14 +623,14 @@
       html += `<tr><td>${esc(name)}</td>`;
       for (const [c] of cols) {
         const x = edgeFor(v, sid, c), w = (Math.abs(x) / max * 50).toFixed(1);
-        html += `<td class="${c === S.dealer ? 'cur' : ''}"><div class="ebar"><div class="track"><div class="bar ${x >= 0 ? 'p' : 'b'}" style="${x >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div>` +
+        html += `<td class="${c === 'eq' ? 'cur' : ''}"><div class="ebar"><div class="track"><div class="bar ${x >= 0 ? 'p' : 'b'}" style="${x >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div>` +
           `<span class="v ${x >= 0 ? 'pos' : 'neg'}">${edgeText(x)}<small>${x >= 0 ? 'player' : 'banker'}</small></span></div></td>`;
       }
       html += '</tr>';
     }
     $('#edge-table').innerHTML = html + '</tbody>';
-    const copy = -v.smart.baselines.standAtMin.evVsEq;
-    $('#edge-bank').textContent = `Holding the bank? Read the table from the other side. A smart banker keeps ${edgeText(copy)} of every bet from players who copy the dealer. With four of them betting $10 each, that is about $${(copy * 40).toFixed(2)} a round. "Knows your strategy" is a banker who has watched you long enough to exploit your exact chart.`;
+    const copy = -v.baselines.standAtMin.evVsEq;
+    $('#edge-bank').textContent = `Holding the bank? Read the table from the other side. Playing the banker's chart, you keep ${edgeText(copy)} of every bet from players who copy the banker. With four of them betting $10 each, that is about $${(copy * 40).toFixed(2)} a round. "Knows your strategy" is a banker who has watched you long enough to exploit your exact chart.`;
   }
 
   // ---------------- EV bars (why tab) and EV dumbbell (chart tab) ----------------
@@ -671,7 +650,7 @@
         return `<div class="evrow${best ? ' best' : ''}"><span class="lab">${lab}</span><div class="evtrack"><div class="evbar ${cls}" style="${val >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%"></div></div><span class="val">${fmt(val, 2)}</span></div>`;
       };
       el.innerHTML = `<div class="ev-title">${esc(evTitle(k))}</div>` + row('Stand', 'S', x.standEV, !hb) + row('Hit', 'H', x.hitEV, hb) +
-        `<div class="ev-note">${hb ? 'Hitting' : 'Standing'} is better by ${Math.abs(x.hitEV - x.standEV).toFixed(2)} units · ${dealerLabel()}, ${bustLabel()}</div>`;
+        `<div class="ev-note">${Math.abs(x.hitEV - x.standEV) < 0.005 ? 'A dead heat' : `${hb ? 'Hitting' : 'Standing'} is better by ${Math.abs(x.hitEV - x.standEV).toFixed(2)} units`} · ${bustLabel()}</div>`;
     });
   }
   function renderDumbbell() {
@@ -722,36 +701,14 @@
     });
   }
 
-  // ---------------- settings: how the smart banker plays ----------------
-  function renderSmartRule() {
-    const v = V(), dc = v.smart.dealerChart;
-    const name = (k) => { const [n, t] = k.split('|'); return `${n}-card ${t}`; };
-    let html = '<thead><tr><th>You hold</th><th>Banker keeps drawing on (hard)</th><th>Ace counted high: draws up to</th></tr></thead><tbody>';
-    for (const np of [2, 3, 4, 5]) {
-      const draws = Object.entries(dc[np]).filter(([k, p]) => p > 0.05 && k.endsWith('|h'))
-        .sort((a, b) => a[0].localeCompare(b[0], 'en', { numeric: true }))
-        .map(([k, p]) => name(k) + (p < 0.95 ? ` (${Math.round(p * 100)}%)` : ''));
-      const soft = [2, 3].map((n) => {
-        let top = 0;
-        for (let t = 16; t <= 21; t++) if ((dc[np][`${n}|${t}|s`] || 0) > 0.5) top = t;
-        return top ? `${n}-card A·${top}` : null;
-      }).filter(Boolean);
-      html += `<tr><td>${np} cards</td><td>${draws.length ? esc(draws.join(', ')) : '<b>Nothing.</b> Opens you on any hard 16+'}</td><td>${soft.length ? soft.join(', ') : 'Stands'}</td></tr>`;
-    }
-    $('#smart-rule').innerHTML = html + '</tbody>';
-    $('#smart-rule-note').textContent = `${bustLabel()[0].toUpperCase() + bustLabel().slice(1)}. Below 16 he always draws; on any 16+ not listed he stands.`;
-    $('#swing').textContent = ((v.fixed.chartEV - v.smart.pureChartVsEqDealer) * 100).toFixed(1) + '%';
-  }
-
   // ---------------- dynamic numbers in rules / why ----------------
   function renderNumbers() {
     const v = V();
-    const edge = S.dealer === 'fixed' ? v.fixed.chartEV : v.smart.pureChartVsEqDealer;
-    $('#rules-edge').textContent = `${edge >= 0 ? 'No house edge: the player keeps' : 'The banker keeps'} ${Math.abs(edge * 100).toFixed(1)}% per hand (${dealerLabel()}, ${bustLabel()}).`;
+    const edge = v.chartEV;
+    $('#rules-edge').textContent = `${edge >= 0 ? 'No house edge: the player keeps' : 'The banker keeps'} ${Math.abs(edge * 100).toFixed(1)}% per hand with both sides playing optimally (${bustLabel()}).`;
     const tok = $('#rules-edge-tok');
     tok.textContent = pct(edge, 1);
     tok.className = 'tok ' + (edge >= 0 ? 'pos' : 'neg');
-    $$('.cur-rule').forEach((el) => { el.textContent = S.variant === 'bust2' ? '(2× rule)' : '(1× rule)'; });
     $$('[data-num], [data-numv]').forEach((el) => {
       const path = el.dataset.numv ? [S.variant, ...el.dataset.numv.split('.')] : el.dataset.num.split('.');
       let x = D.variants;
@@ -771,7 +728,6 @@
     renderEdge();
     renderDumbbell();
     renderEvBars();
-    renderSmartRule();
     renderNumbers();
   }
 

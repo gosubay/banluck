@@ -396,7 +396,7 @@ function baselineCharts(T) {
   for (let p = 0; p < NC; p++) if (isPDecision(T, p)) keys.add(KEY[p]);
   const mk = (fn) => Object.fromEntries([...keys].map((k) => { const [n, t, s] = k.split('|'); return [k, fn(+n, +t, s === 's') ? 1 : 0]; }));
   return {
-    standAtMin: { name: 'Stand on 16+ (copy the dealer)', chart: mk(() => false) },
+    standAtMin: { name: 'Stand on 16+ (copy the banker)', chart: mk(() => false) },
     casino17: { name: 'Casino habit: hit 16, stand 17+', chart: mk((n, t) => t < 17) },
     dragonChaser: { name: 'Dragon chaser: always hit 4 cards', chart: mk((n, t) => n === 4) },
   };

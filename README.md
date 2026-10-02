@@ -12,16 +12,16 @@ Open `index.html` in a browser. It is a single self-contained file.
 - Ban-Ban (A-A) 3×, Ban-Luck (A + ten-value) 2×, settled immediately. 777 pays 7×, 五龙 (Five Dragons: five cards, 21 or less) 2×, or 3× if exactly 21. The banker collects these too.
 - Both bust = push.
 - Five-card bust: two variants are solved, **lose 1×** and **lose 2×** (player only).
-- Two dealer models: **fixed** (stands on any 16+) and **smart** (sees how many cards the player holds; solved as a two-player game with CFR+).
+- Both sides play optimally. The banker sees how many cards the player holds and decides whether to open them or keep drawing; the game is solved as a two-player game with CFR+, the same way poker is solved.
 
-## Headline results (player's edge per hand; negative = banker's edge)
+## Headline results (banker's edge per hand, both sides optimal)
 
-| Variant | vs fixed dealer | vs smart dealer (game value) |
+| Variant | Game value | Player using the chart (no mixing) |
 |---|---|---|
-| 5-card bust loses 1× | +4.66% | −1.04% |
-| 5-card bust loses 2× | +2.60% | −3.10% |
+| 5-card bust loses 1× | 1.04% | 0.99% |
+| 5-card bust loses 2× | 3.10% | 3.06% |
 
-The strategy chart for the 2× variant against a fixed dealer fits in one line: stand on **hard 17**, on **19 with two cards and an Ace**, and on **20 with three cards and an Ace**. Hit everything below.
+The player's chart for the 2× variant fits in one line: stand on **two-card hard 16**, **hard 17** with three or four cards, **19 with two cards and an Ace**, and **20 with three cards and an Ace**. Hit everything below. The banker's chart (when to open each player, by their card count) is on the Strategy chart tab.
 
 ## Reproduce
 
@@ -34,6 +34,6 @@ node build.js               # inline everything             -> index.html, dist/
 ## Layout
 
 - `js/core.js`: rules engine, hand evaluation, settlement, dealing and simulation (shared by Node and the browser).
-- `solver/solve.js`: exact solver. Enumerates all 2,983 hand compositions with exact card-removal odds. The fixed dealer is solved by backward induction; the smart dealer by CFR+ to < 0.002% exploitability.
-- `solver/montecarlo.js`: multi-threaded Monte Carlo verification of the solved charts.
+- `solver/solve.js`: exact solver. Enumerates all 2,983 hand compositions with exact card-removal odds. The game is solved by CFR+ to < 0.002% exploitability. The solver also computes a reference banker who always stands on 16+; those numbers stay in `data/solution.json` but are not shown on the site.
+- `solver/montecarlo.js`: multi-threaded Monte Carlo verification of the solved charts against the solved banker.
 - `web/`: page template, app logic, and the Rules, Why-it-works and Settings copy (`rules.html`, `why.html`, `settings.html`); `build.js` assembles `index.html`.
