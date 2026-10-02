@@ -137,7 +137,7 @@ function buildTables(rules) {
 function dealerPass(T, np, sigmaD, reachStop, br) {
   const pl = PL[np], NP = pl.length;
   const V = new Float64Array(NP * NC);
-  const cfH = new Float64Array(NC), cfS = new Float64Array(NC);
+  const cfH = new Float64Array(NC), cfS = new Float64Array(NC), cfW = new Float64Array(NC);
   const PAY = T.PAY[np];
   const hitV = new Float64Array(NP), standV = new Float64Array(NP);
   for (const d of DORDER) {
@@ -145,7 +145,7 @@ function dealerPass(T, np, sigmaD, reachStop, br) {
     const term = T.TERM[d], forced = T.FORCED_D[d];
     const decision = !term && !forced;
     const rem = DECK - np - nd;
-    let sumH = 0, sumS = 0;
+    let sumH = 0, sumS = 0, sumW = 0;
     for (let j = 0; j < NP; j++) {
       const pay = PAY[j * NC + d];
       if (pay === -128) continue;
@@ -163,12 +163,12 @@ function dealerPass(T, np, sigmaD, reachStop, br) {
         const rs = reachStop[p];
         if (rs > 0) {
           const w = rs * pseq(p, d);
-          sumH += w * h; sumS += w * pay;
+          sumH += w * h; sumS += w * pay; sumW += w;
         }
       }
     }
     if (!decision) continue;
-    cfH[d] = sumH; cfS[d] = sumS;
+    cfH[d] = sumH; cfS[d] = sumS; cfW[d] = sumW;
     let s = sigmaD[np * NC + d];
     if (br) s = sumH < sumS ? 1 : 0;
     for (let j = 0; j < NP; j++) {
@@ -177,7 +177,7 @@ function dealerPass(T, np, sigmaD, reachStop, br) {
     }
     if (br) sigmaD[np * NC + d] = s;
   }
-  return { V, cfH, cfS };
+  return { V, cfH, cfS, cfW };
 }
 
 // ---- Player pass ----------------------------------------------------------
@@ -351,6 +351,32 @@ function dealerChart(T, sigmaD) {
   }
   return out;
 }
+/*
+ * Banker's expected result (banker's side, units per hand) for standing ("open the
+ * player now") vs drawing, per banker chart key and player card count, given
+ * both sides play sigmaP / sigmaD. The counterfactual sums from dealerPass carry
+ * chance x player reach; multiplying by the banker's own path reach
+ * (dealerReach / pseq) turns them into joint weights, because a composition's
+ * draw probability with the player's cards removed scales every ordering by the
+ * same pseq(p, d) / pseq(-1, d) factor.
+ */
+function dealerChartEV(T, sigmaP, sigmaD) {
+  const { stop } = playerReach(T, sigmaP);
+  const { cf } = allDealerPasses(T, sigmaD, stop, false);
+  const out = {};
+  for (let np = 2; np <= 5; np++) {
+    const dr = dealerReach(T, sigmaD, np), agg = {};
+    for (let d = 0; d < NC; d++) {
+      if (!isDDecision(T, d)) continue;
+      const own = dr[d] > 1e-15 ? dr[d] / pseq(-1, d) : 1e-9;
+      const a = agg[KEY[d]] || (agg[KEY[d]] = { w: 0, s: 0, h: 0 });
+      a.w += own * cf[np].cfW[d]; a.s += own * cf[np].cfS[d]; a.h += own * cf[np].cfH[d];
+    }
+    out[np] = {};
+    for (const [k, a] of Object.entries(agg)) if (a.w > 0) out[np][k] = [+(-a.s / a.w).toFixed(4), +(-a.h / a.w).toFixed(4)];
+  }
+  return out;
+}
 /** Expand a key-level chart back into per-composition sigmas. */
 const sigmaFromPlayerChart = (T, chart) => {
   const s = new Float64Array(NC);
@@ -465,6 +491,7 @@ function solveVariant(fiveCardBustMult) {
   const ppEq = playerPass(T, allDealerPasses(T, sm.sigmaD, null, false).Vs, sm.sigmaP, false);
   const chartS = playerChart(T, sm.sigmaP, ppEq);
   const dChartS = dealerChart(T, sm.sigmaD);
+  const dEV = dealerChartEV(T, sm.sigmaP, sm.sigmaD);
   const pureS = pureOf(chartS);
   const keyDealer = sigmaFromDealerChart(T, dChartS);
   const pureSigma = sigmaFromPlayerChart(T, pureS);
@@ -478,7 +505,7 @@ function solveVariant(fiveCardBustMult) {
   log(`  pure chart vs eq dealer ${pureVsEq.toFixed(6)}, vs dealer best response ${pureVsBR.toFixed(6)}`);
   result.smart = {
     value: sm.value, bounds: sm.bounds, exploitability: sm.gap, iters: sm.iters, history: sm.history,
-    chart: chartS, pureChart: pureS, dealerChart: dChartS,
+    chart: chartS, pureChart: pureS, dealerChart: dChartS, dealerEV: dEV,
     pureChartVsEqDealer: pureVsEq, pureChartVsDealerBR: pureVsBR, pureChartVsFixedDealer: eqVsFixedDealer,
     fixedChartVsEqDealer: fixedChartVsEq, fixedChartVsDealerBR: fixedChartVsSmartBR,
     baselines: {},

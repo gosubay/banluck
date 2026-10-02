@@ -25,7 +25,7 @@ for (const [id, v] of Object.entries(sol.variants)) {
       baselines: Object.fromEntries(Object.entries(v.fixed.baselines).map(([k, b]) => [k, { name: b.name, ev: r4(b.ev) }])),
     },
     smart: {
-      value: r4(s.value), exploitability: s.exploitability, chart: s.chart, pureChart: s.pureChart, dealerChart: s.dealerChart,
+      value: r4(s.value), exploitability: s.exploitability, chart: s.chart, pureChart: s.pureChart, dealerChart: s.dealerChart, dealerEV: s.dealerEV,
       pureChartVsEqDealer: r4(s.pureChartVsEqDealer), pureChartVsDealerBR: r4(s.pureChartVsDealerBR),
       pureChartVsFixedDealer: r4(s.pureChartVsFixedDealer), fixedChartVsEqDealer: r4(s.fixedChartVsEqDealer),
       fixedChartVsDealerBR: r4(s.fixedChartVsDealerBR),

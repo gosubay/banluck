@@ -563,28 +563,41 @@
     $('#strat').innerHTML = html;
     $('#legend-mix').hidden = S.dealer !== 'smart';
 
-    // banker chart (smart dealer equilibrium)
-    const dc = v.smart.dealerChart;
-    $('#banker-note').textContent = S.dealer === 'fixed'
-      ? 'The fixed dealer ignores you and stands on 16+. A smart banker does better by watching how many cards you hold. This is the solved banker strategy (it is the same in both modes).'
-      : 'This is the banker you are playing against. Each table shows what the banker does on 16+, depending on how many cards you hold.';
+    // banker chart: when to open each player (smart banker equilibrium)
+    const dc = v.smart.dealerChart, dev = v.smart.dealerEV || {};
+    $('#banker-note').textContent = (S.dealer === 'fixed'
+      ? 'The fixed banker ignores this and stands on any 16+. This is how a smart banker should play: '
+      : 'This is the banker you are playing against: ') +
+      `for each of his hands, open or keep drawing depending on how many cards the player holds (${bustLabel()}).`;
+    const NAMES = { 2: 'Two cards', 3: 'Three cards', 4: 'Four cards' };
     let bh = '';
-    for (const np of [2, 3, 4, 5]) {
-      bh += `<div><div class="eyebrow">You hold ${np} cards</div><table class="mini"><thead><tr><th></th><th>2c</th><th>3c</th><th>4c</th></tr></thead><tbody>`;
+    for (const n of [2, 3, 4]) {
       const rows = [];
-      for (let t = 16; t <= 21; t++) rows.push(['h', t]);
-      for (let t = 16; t <= 21; t++) rows.push(['s', t]);
-      for (const [s, t] of rows) {
+      for (const s of ['h', 's']) {
+        const ks = [];
+        for (let t = 16; t <= 21; t++) { const k = `${n}|${t}|${s}`; if ([2, 3, 4, 5].some((np) => dc[np][k] !== undefined)) ks.push(k); }
+        if (ks.length) rows.push({ head: s === 'h' ? 'Hard' : 'Ace counted high' }, ...ks.map((k) => ({ k })));
+      }
+      bh += `<div class="box"><div class="eyebrow">Banker holds ${NAMES[n].toLowerCase()}</div><div class="scroll"><table class="bank"><thead><tr><th></th><th colspan="4">Player holds</th></tr><tr><th></th><th>2 cards</th><th>3 cards</th><th>4 cards</th><th>5 cards</th></tr></thead><tbody>`;
+      for (const r of rows) {
+        if (r.head) { bh += `<tr class="group"><th colspan="5">${r.head}</th></tr>`; continue; }
+        const [, t, s] = r.k.split('|');
         bh += `<tr><th class="rowh">${s === 's' ? 'A·' : ''}${t}</th>`;
-        for (const n of [2, 3, 4]) {
-          const p = dc[np][`${n}|${t}|${s}`];
+        for (const np of [2, 3, 4, 5]) {
+          const p = dc[np][r.k], ev = dev[np] && dev[np][r.k];
           if (p === undefined) { bh += '<td><div class="cell na">·</div></td>'; continue; }
-          const H = p >= 0.5, mixed = p > 0.1 && p < 0.9;
-          bh += `<td><div class="cell ${H ? 'H' : 'S'}${mixed ? ' mixed' : ' strong'}" title="Banker hits ${Math.round(p * 100)}% of the time">${mixed ? Math.round(p * 100) + '%' : H ? 'H' : 'S'}</div></td>`;
+          const draw = p >= 0.5, mixed = p > 0.1 && p < 0.9;
+          const strong = ev ? Math.abs(ev[0] - ev[1]) >= 0.1 : !mixed;
+          const lab = mixed ? (draw ? `Draw ${Math.round(p * 100)}%` : `Open ${Math.round((1 - p) * 100)}%`) : draw ? 'Draw' : 'Open';
+          const evs = ev ? `<span class="evs"><span${ev[0] >= ev[1] ? ' class="b"' : ''}>O ${fmt(ev[0], 2)}</span><span${ev[1] > ev[0] ? ' class="b"' : ''}>D ${fmt(ev[1], 2)}</span></span>` : '';
+          const title = `Banker ${n}-card ${s === 's' ? 'Ace-high ' : ''}${t} vs a player holding ${np} cards: ` +
+            (mixed ? `draw ${Math.round(p * 100)}% of the time, open otherwise.` : draw ? 'keep drawing.' : 'open them now.') +
+            (ev ? ` Banker's average: open ${fmt(ev[0], 3)}, draw ${fmt(ev[1], 3)}.` : '');
+          bh += `<td><div class="cell ${draw ? 'H' : 'S'}${strong && !mixed ? ' strong' : ''}${mixed ? ' mixed' : ''}" title="${esc(title)}">${lab}${evs}</div></td>`;
         }
         bh += '</tr>';
       }
-      bh += '</tbody></table></div>';
+      bh += '</tbody></table></div></div>';
     }
     $('#banker').innerHTML = bh;
   }

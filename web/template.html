@@ -406,6 +406,20 @@ table.combo th[scope="row"] { font-size: .9rem; text-transform: none; letter-spa
 .opt-text { color: var(--muted); }
 .opt-nums { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .82rem; color: var(--muted); }
 .opt-nums b { color: var(--ink); font-weight: 500; }
+
+/* ---- Banker's chart ---- */
+.chart-sub { margin: 8px 0 12px; }
+.bank-sec { margin-top: 28px; }
+.dumb-grid.narrow { grid-template-columns: 1fr; }
+.bank-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 14px; align-items: start; }
+.bank-grid .box { gap: 8px; }
+table.bank { border-collapse: separate; border-spacing: 3px; width: 100%; min-width: 320px; }
+table.bank th { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; padding: 2px; text-align: center; }
+table.bank th.rowh { text-align: left; text-transform: none; letter-spacing: 0; font-size: .86rem; color: var(--ink); font-weight: 500; white-space: nowrap; font-family: var(--font-mono); }
+table.bank tr.group th { text-align: left; padding-top: 8px; color: var(--ink); }
+table.bank .cell { padding: 5px 2px; font-size: .78rem; }
+table.bank .cell .evs { font-size: .64rem; }
+table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
 </style>
 
 <header class="top">
@@ -540,7 +554,7 @@ table.combo th[scope="row"] { font-size: .9rem; text-transform: none; letter-spa
 <section id="chart" role="tabpanel" aria-labelledby="t-chart" tabindex="-1" hidden>
   <div class="panel-intro">
     <h2 id="chart-title">Basic strategy</h2>
-    <p>The dealer's cards are face down, so there is no upcard column. The decision depends on just three things you can see: your total, how many cards you hold, and whether an Ace is counted high. Under 16 you must hit; at five cards you stop.</p>
+    <p>Two charts: one for you as a player, one for when you hold the bank. The banker's cards are face down, so a player's decision depends only on their own total, card count, and whether an Ace is counted high. The banker also sees how many cards each player holds.</p>
   </div>
   <div class="edge">
     <div class="box">
@@ -558,6 +572,7 @@ table.combo th[scope="row"] { font-size: .9rem; text-transform: none; letter-spa
       <p class="small" id="edge-bank"></p>
     </div>
   </div>
+  <div class="sec-head chart-sub"><span class="eyebrow">As a player</span><h3>Your chart: hit or stand</h3></div>
   <div class="chart-layout">
     <div class="box">
       <div class="scroll"><table class="strat" id="strat"></table></div>
@@ -567,22 +582,29 @@ table.combo th[scope="row"] { font-size: .9rem; text-transform: none; letter-spa
         <span>Pale cell = close call</span>
         <span id="legend-mix" hidden><span class="sw" style="outline:2px dashed var(--gold);outline-offset:-2px"></span>Solver mixes; either is fine</span>
       </div>
-      <p class="small">Each cell shows the average result if you <b>H</b>it and if you <b>S</b>tand, in units per hand from that spot (after hitting, you keep following the chart). The better one is in bold. The colour shows the decision; a pale cell means the gap is under 0.1 units.</p>
+      <p class="small">Each cell shows the average result if you <b>H</b>it and if you <b>S</b>tand, in units per hand from that spot (after hitting, you keep following the chart). The better one is in bold. A pale cell means the gap is under 0.1 units.</p>
     </div>
-    <div class="side">
-      <div class="box">
-        <div class="eyebrow">If you hold the bank</div>
-        <h3>Dealer strategy against one player</h3>
-        <p class="small" id="banker-note"></p>
-        <div class="banker-grid" id="banker"></div>
-      </div>
+    <div class="box">
+      <h3>EV of hitting vs standing</h3>
+      <p class="small">Each line joins the two choices for one spot. The further apart the dots, the more the decision matters. Hover or tap a row for the numbers.</p>
+      <div class="legend"><span><span class="sw" style="background:var(--cinnabar);border-radius:50%"></span>Hit</span><span><span class="sw" style="background:var(--stand);border-radius:50%"></span>Stand</span><span>Larger dot = the chart's choice</span></div>
+      <div class="dumb-grid narrow" id="dumb"></div>
     </div>
   </div>
-  <div class="box" style="margin-top:20px">
-    <h3>EV of hitting vs standing, spot by spot</h3>
-    <p class="small">Each line joins the two choices for one spot. The further apart the dots, the more the decision matters. Hover or tap a row for the numbers.</p>
-    <div class="legend"><span><span class="sw" style="background:var(--cinnabar);border-radius:50%"></span>Hit</span><span><span class="sw" style="background:var(--stand);border-radius:50%"></span>Stand</span><span>Larger dot = the chart's choice</span></div>
-    <div class="dumb-grid" id="dumb"></div>
+
+  <div class="section bank-sec">
+    <div class="sec-head chart-sub">
+      <span class="eyebrow">If you hold the bank</span>
+      <h3>Banker's chart: when to open each player</h3>
+      <p class="small" id="banker-note"></p>
+    </div>
+    <div class="bank-grid" id="banker"></div>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--stand)"></span>Open: stand and settle that player now</span>
+      <span><span class="sw" style="background:var(--cinnabar)"></span>Draw: keep drawing against them</span>
+      <span><span class="sw" style="outline:2px dashed var(--gold);outline-offset:-2px"></span>Mix: do the shown action that % of the time</span>
+    </div>
+    <p class="small">Each cell shows the banker's average result per unit bet if he <b>O</b>pens that player now or <b>D</b>raws on, from the banker's side (+ is good for the banker). Below 16 the banker must draw. With several players, look up each player's card count separately: open the ones marked Open, then draw on against the rest.</p>
   </div>
 </section>
 
