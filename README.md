@@ -36,4 +36,4 @@ node build.js               # inline everything             -> index.html, dist/
 - `js/core.js`: rules engine, hand evaluation, settlement, dealing and simulation (shared by Node and the browser).
 - `solver/solve.js`: exact solver. Enumerates all 2,983 hand compositions with exact card-removal odds. The fixed dealer is solved by backward induction; the smart dealer by CFR+ to < 0.002% exploitability.
 - `solver/montecarlo.js`: multi-threaded Monte Carlo verification of the solved charts.
-- `web/`: page template, app logic, and the Rules and Why-it-works copy (`rules.html`, `why.html`); `build.js` assembles `index.html`.
+- `web/`: page template, app logic, and the Rules, Why-it-works and Settings copy (`rules.html`, `why.html`, `settings.html`); `build.js` assembles `index.html`.

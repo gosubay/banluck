@@ -1,0 +1,90 @@
+  <div class="panel-intro">
+    <h2>Settings</h2>
+    <p>Two choices change every number on this site: what a five-card bust costs, and how the banker plays. Pick the ones that match your table. The switches in the header do the same thing.</p>
+  </div>
+
+  <!-- The four combinations -->
+  <div class="section">
+    <div class="sec-head">
+      <h3>What each combination is worth</h3>
+      <p class="small">Your edge per hand with the best chart for that banker. Tap a cell to use it.</p>
+    </div>
+    <div class="scroll">
+      <table class="combo" id="combo">
+        <thead><tr><th></th><th>Fixed banker</th><th>Smart banker</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><span class="cjk">五龙</span> bust loses 1×</th>
+            <td><button type="button" class="combo-cell" data-v="bust1" data-d="fixed"><span class="num" data-num="bust1.fixed.chartEV" data-dp="2" data-fmt="edge">–</span><small>player's edge</small></button></td>
+            <td><button type="button" class="combo-cell" data-v="bust1" data-d="smart"><span class="num" data-num="bust1.smart.pureChartVsEqDealer" data-dp="2" data-fmt="edge">–</span><small>banker's edge</small></button></td></tr>
+          <tr><th scope="row"><span class="cjk">五龙</span> bust loses 2×</th>
+            <td><button type="button" class="combo-cell" data-v="bust2" data-d="fixed"><span class="num" data-num="bust2.fixed.chartEV" data-dp="2" data-fmt="edge">–</span><small>player's edge</small></button></td>
+            <td><button type="button" class="combo-cell" data-v="bust2" data-d="smart"><span class="num" data-num="bust2.smart.pureChartVsEqDealer" data-dp="2" data-fmt="edge">–</span><small>banker's edge</small></button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- a) Rule variant -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="eyebrow">Rule variant</span>
+      <h3>Busting on five cards: lose 1× or 2×?</h3>
+      <p class="small">You bust on your fifth card, over 21, when you were going for <span class="cjk">五龙</span>. Tables disagree on what that costs.</p>
+    </div>
+    <div class="opts">
+      <button type="button" class="opt" data-v="bust1" aria-pressed="false">
+        <span class="opt-head"><span class="opt-radio" aria-hidden="true"></span><b>Lose 1×</b><span class="tok plain">normal bust</span></span>
+        <span class="hand-art sm fan" data-hand="3♠ 4♦ 5♣ 2♥ 9♠"></span>
+        <span class="opt-text">A five-card bust costs the same as any other bust. Chasing <span class="cjk">五龙</span> is cheap, so you also hit four-card 17.</span>
+        <span class="opt-nums"><span>Fixed banker <b class="num" data-num="bust1.fixed.chartEV" data-dp="2">–</b></span><span>Smart banker <b class="num" data-num="bust1.smart.pureChartVsEqDealer" data-dp="2">–</b></span></span>
+      </button>
+      <button type="button" class="opt" data-v="bust2" aria-pressed="true">
+        <span class="opt-head"><span class="opt-radio" aria-hidden="true"></span><b>Lose 2×</b><span class="tok">your house rule</span></span>
+        <span class="hand-art sm fan" data-hand="3♠ 4♦ 5♣ 2♥ 9♠"></span>
+        <span class="opt-text">A five-card bust costs double. Chase <span class="cjk">五龙</span> only from four-card 16. Players only: a banker who busts on five cards pays 1×.</span>
+        <span class="opt-nums"><span>Fixed banker <b class="num" data-num="bust2.fixed.chartEV" data-dp="2">–</b></span><span>Smart banker <b class="num" data-num="bust2.smart.pureChartVsEqDealer" data-dp="2">–</b></span></span>
+      </button>
+    </div>
+    <p class="small">Either way, if the banker also busts it's a push.</p>
+  </div>
+
+  <!-- b) Dealer strategy -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="eyebrow">Banker's strategy</span>
+      <h3>How does the banker play?</h3>
+      <p class="small">Both bankers must draw below 16. The difference is what they do from 16 up.</p>
+    </div>
+    <div class="opts">
+      <button type="button" class="opt" data-d="fixed" aria-pressed="true">
+        <span class="opt-head"><span class="opt-radio" aria-hidden="true"></span><b>Fixed</b><span class="tok plain">casual banker</span></span>
+        <span class="opt-art"><span class="hand-art sm fan" data-hand="10♠ 6♥"></span><span class="tok">16 → stand</span></span>
+        <span class="opt-text">Always stands on 16 or higher. Ignores you completely and opens everyone at the end with the same hand.</span>
+        <span class="opt-nums"><span>Best play <b class="num" data-numv="fixed.chartEV" data-dp="2">–</b> <small class="cur-rule">(2× rule)</small></span></span>
+      </button>
+      <button type="button" class="opt" data-d="smart" aria-pressed="false">
+        <span class="opt-head"><span class="opt-radio" aria-hidden="true"></span><b>Smart</b><span class="tok">sharp banker</span></span>
+        <span class="opt-art"><span class="hand-art sm fan" data-hand="XX XX XX XX"></span><span class="tok">you hold 4</span></span>
+        <span class="opt-text">Varies his strategy based on your card count. He picks the hit or stand that hurts you most, and sometimes mixes it up so you can't read him.</span>
+        <span class="opt-nums"><span>Best play <b class="num" data-numv="smart.pureChartVsEqDealer" data-dp="2">–</b> <small class="cur-rule">(2× rule)</small></span></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section">
+      <div class="sec-head">
+        <h3>How the smart banker plays</h3>
+        <p class="small" id="smart-rule-note">With the rule selected above, once he has 16 or more.</p>
+      </div>
+      <div class="scroll"><table class="data" id="smart-rule"></table></div>
+      <p class="small">With several players at the table, "stand" means <b>open that player now</b> and "draw" means keep drawing against them. Each player is settled against whatever the banker holds when they're opened, so this table is also the order to open people in.</p>
+    </div>
+    <div class="section prose">
+      <h3>Where the banker's edge comes from</h3>
+      <p>The rules are nearly symmetric. Two busts push, so the casino's usual edge (you bust first and lose anyway) is gone. Against a fixed banker that leaves the edge with <b>you</b>, because you make real choices and he doesn't.</p>
+      <p>The smart banker wins it back with <b>information</b>. He plays last and can count your face-down cards; you see nothing of his. Two cards and standing means 16 to 20. Five cards means <span class="cjk">五龙</span> or a bust. That knowledge is worth about <b id="swing">5.7%</b> per hand.</p>
+      <p>Opening people early is how he cashes it in. He settles the players he has nothing to gain from drawing against, like five-card hands, then keeps drawing against the rest. A bust after that only costs him against the players still waiting.</p>
+      <p class="small">The player-only 2× five-card bust adds about 2% more for the banker.</p>
+    </div>
+  </div>

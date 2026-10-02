@@ -26,17 +26,23 @@
   const bustLabel = () => (S.variant === 'bust2' ? 'five-card bust loses 2×' : 'five-card bust loses 1×');
   const dealerLabel = () => (S.dealer === 'fixed' ? 'fixed dealer' : 'smart dealer');
 
+  // Header switches, Settings option cards and the combination table all set the same two choices.
   function bindSegs() {
-    $$('#seg-variant button').forEach((b) => b.addEventListener('click', () => { S.variant = b.dataset.v; save(); refreshAll(); }));
-    $$('#seg-dealer button').forEach((b) => b.addEventListener('click', () => { S.dealer = b.dataset.d; save(); refreshAll(); }));
+    $$('#seg-variant button, #seg-dealer button, .opt, .combo-cell').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.v) S.variant = b.dataset.v;
+      if (b.dataset.d) S.dealer = b.dataset.d;
+      save(); refreshAll();
+    }));
   }
   function syncSegs() {
-    $$('#seg-variant button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === S.variant)));
-    $$('#seg-dealer button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.d === S.dealer)));
+    $$('#seg-variant button, #seg-dealer button, .opt, .combo-cell').forEach((b) => {
+      const on = (!b.dataset.v || b.dataset.v === S.variant) && (!b.dataset.d || b.dataset.d === S.dealer);
+      b.setAttribute('aria-pressed', String(on));
+    });
   }
 
   // ---------------- tabs ----------------
-  const TABS = ['play', 'chart', 'rules', 'why'];
+  const TABS = ['play', 'chart', 'rules', 'why', 'settings'];
   function showTab(id, focus) {
     if (!TABS.includes(id)) id = 'play';
     TABS.forEach((t) => {
@@ -703,6 +709,27 @@
     });
   }
 
+  // ---------------- settings: how the smart banker plays ----------------
+  function renderSmartRule() {
+    const v = V(), dc = v.smart.dealerChart;
+    const name = (k) => { const [n, t] = k.split('|'); return `${n}-card ${t}`; };
+    let html = '<thead><tr><th>You hold</th><th>Banker keeps drawing on (hard)</th><th>Ace counted high: draws up to</th></tr></thead><tbody>';
+    for (const np of [2, 3, 4, 5]) {
+      const draws = Object.entries(dc[np]).filter(([k, p]) => p > 0.05 && k.endsWith('|h'))
+        .sort((a, b) => a[0].localeCompare(b[0], 'en', { numeric: true }))
+        .map(([k, p]) => name(k) + (p < 0.95 ? ` (${Math.round(p * 100)}%)` : ''));
+      const soft = [2, 3].map((n) => {
+        let top = 0;
+        for (let t = 16; t <= 21; t++) if ((dc[np][`${n}|${t}|s`] || 0) > 0.5) top = t;
+        return top ? `${n}-card A·${top}` : null;
+      }).filter(Boolean);
+      html += `<tr><td>${np} cards</td><td>${draws.length ? esc(draws.join(', ')) : '<b>Nothing.</b> Opens you on any hard 16+'}</td><td>${soft.length ? soft.join(', ') : 'Stands'}</td></tr>`;
+    }
+    $('#smart-rule').innerHTML = html + '</tbody>';
+    $('#smart-rule-note').textContent = `${bustLabel()[0].toUpperCase() + bustLabel().slice(1)}. Below 16 he always draws; on any 16+ not listed he stands.`;
+    $('#swing').textContent = ((v.fixed.chartEV - v.smart.pureChartVsEqDealer) * 100).toFixed(1) + '%';
+  }
+
   // ---------------- dynamic numbers in rules / why ----------------
   function renderNumbers() {
     const v = V();
@@ -711,11 +738,15 @@
     const tok = $('#rules-edge-tok');
     tok.textContent = pct(edge, 1);
     tok.className = 'tok ' + (edge >= 0 ? 'pos' : 'neg');
-    $$('[data-num]').forEach((el) => {
-      const path = el.dataset.num.split('.');
+    $$('.cur-rule').forEach((el) => { el.textContent = S.variant === 'bust2' ? '(2× rule)' : '(1× rule)'; });
+    $$('[data-num], [data-numv]').forEach((el) => {
+      const path = el.dataset.numv ? [S.variant, ...el.dataset.numv.split('.')] : el.dataset.num.split('.');
       let x = D.variants;
       for (const p of path) x = x == null ? undefined : x[p];
-      if (typeof x === 'number') el.textContent = el.dataset.fmt === 'units' ? fmt(x, 3) : pct(x, el.dataset.dp ? +el.dataset.dp : 1);
+      if (typeof x !== 'number') return;
+      const dp = el.dataset.dp ? +el.dataset.dp : 1;
+      el.textContent = el.dataset.fmt === 'units' ? fmt(x, 3) : el.dataset.fmt === 'edge' ? Math.abs(x * 100).toFixed(dp) + '%' : pct(x, dp);
+      if (el.dataset.fmt === 'edge') el.classList.toggle('neg', x < 0), el.classList.toggle('pos', x >= 0);
     });
   }
 
@@ -727,6 +758,7 @@
     renderEdge();
     renderDumbbell();
     renderEvBars();
+    renderSmartRule();
     renderNumbers();
   }
 

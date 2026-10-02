@@ -382,6 +382,30 @@ table.edge-table td.cur { background: color-mix(in srgb, var(--gold) 12%, transp
   .dragon-art.msg svg, .dragon-art.corner svg { animation: bob 2.4s ease-in-out infinite; }
 }
 @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-2deg); } }
+
+/* ---- Settings ---- */
+.switch-lab { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+.switch-lab:hover { color: var(--ink); }
+table.combo { border-collapse: separate; border-spacing: 8px; min-width: 420px; }
+table.combo th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; text-align: left; padding: 0 4px; }
+table.combo th[scope="row"] { font-size: .9rem; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 500; white-space: nowrap; }
+.combo-cell { width: 100%; min-width: 150px; display: grid; gap: 2px; justify-items: start; padding: 12px 16px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); cursor: pointer; text-align: left; }
+.combo-cell .num { font-size: 1.6rem; line-height: 1.1; }
+.combo-cell small { font-size: .75rem; color: var(--muted); }
+.combo-cell[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: color-mix(in srgb, var(--gold) 10%, var(--surface)); }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .opts { grid-template-columns: 1fr; } }
+.opt { display: grid; gap: 10px; align-content: start; justify-items: start; text-align: left; padding: 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: .9rem; }
+.opt:hover { border-color: var(--muted); }
+.opt[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.opt-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.opt-head b { font-family: var(--font-display); font-weight: 400; font-size: 1.25rem; }
+.opt-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted); flex: none; }
+.opt[aria-pressed="true"] .opt-radio { border-color: var(--ink); background: radial-gradient(circle, var(--ink) 0 4px, transparent 5px); }
+.opt-art { display: flex; align-items: flex-end; gap: 10px; }
+.opt-text { color: var(--muted); }
+.opt-nums { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .82rem; color: var(--muted); }
+.opt-nums b { color: var(--ink); font-weight: 500; }
 </style>
 
 <header class="top">
@@ -392,15 +416,15 @@ table.edge-table td.cur { background: color-mix(in srgb, var(--gold) 12%, transp
       <span class="tag">Solved hit/stand strategy · single deck · you vs the banker</span>
     </div>
     <div class="switches">
-      <div class="switch" title="What a five-card bust costs you">5-card bust
+      <div class="switch" title="What a five-card bust costs you"><a href="#settings" class="switch-lab"><span class="cjk">五龙</span> bust</a>
         <span class="seg" id="seg-variant">
           <button type="button" data-v="bust1" aria-pressed="false">lose 1×</button>
           <button type="button" data-v="bust2" aria-pressed="true">lose 2×</button>
         </span>
       </div>
-      <div class="switch" title="How the dealer plays">Dealer
+      <div class="switch" title="How the banker plays"><a href="#settings" class="switch-lab">Banker</a>
         <span class="seg" id="seg-dealer">
-          <button type="button" data-d="fixed" aria-pressed="true">fixed rule</button>
+          <button type="button" data-d="fixed" aria-pressed="true">fixed</button>
           <button type="button" data-d="smart" aria-pressed="false">smart</button>
         </span>
       </div>
@@ -410,6 +434,7 @@ table.edge-table td.cur { background: color-mix(in srgb, var(--gold) 12%, transp
       <button type="button" role="tab" id="t-chart" aria-controls="chart" aria-selected="false">Strategy chart</button>
       <button type="button" role="tab" id="t-rules" aria-controls="rules" aria-selected="false">Rules</button>
       <button type="button" role="tab" id="t-why" aria-controls="why" aria-selected="false">Why it works</button>
+      <button type="button" role="tab" id="t-settings" aria-controls="settings" aria-selected="false">Settings</button>
     </nav>
   </div>
 </header>
@@ -569,6 +594,11 @@ table.edge-table td.cur { background: color-mix(in srgb, var(--gold) 12%, transp
 <!-- ============================ WHY ============================ -->
 <section id="why" role="tabpanel" aria-labelledby="t-why" tabindex="-1" hidden>
   <!--WHY-->
+</section>
+
+<!-- ============================ SETTINGS ============================ -->
+<section id="settings" role="tabpanel" aria-labelledby="t-settings" tabindex="-1" hidden>
+<!--SETTINGS-->
 </section>
 
 </div>

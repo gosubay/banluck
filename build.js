@@ -3,7 +3,7 @@
  * Builds the single-file site from web/template.html:
  *   index.html          full HTML document (GitHub Pages / open locally)
  *   dist/artifact.html  same page without the document skeleton (for Artifact publishing)
- * Inlines js/core.js, web/app.js, web/rules.html, web/why.html and the solver / Monte Carlo results.
+ * Inlines js/core.js, web/app.js, web/rules.html, web/why.html, web/settings.html and the solver / Monte Carlo results.
  */
 'use strict';
 const fs = require('fs');
@@ -45,6 +45,7 @@ const core = R('js/core.js');
 let page = R('web/template.html')
   .replace('<!--RULES-->', () => R('web/rules.html'))
   .replace('<!--WHY-->', () => R('web/why.html'))
+  .replace('<!--SETTINGS-->', () => R('web/settings.html'))
   .replace('/*__CORE__*/', () => safe(core) + '\nwindow.CORE_SRC = ' + safe(JSON.stringify(core)) + ';')
   .replace('/*__DATA__*/', () => 'window.BL_DATA = ' + safe(JSON.stringify(data)) + ';')
   .replace('/*__APP__*/', () => safe(R('web/app.js')));
