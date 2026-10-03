@@ -419,6 +419,46 @@ table.bank tr.group th { text-align: left; padding-top: 8px; color: var(--ink); 
 table.bank .cell { padding: 5px 2px; font-size: .78rem; }
 table.bank .cell .evs { font-size: .64rem; }
 table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
+
+/* ---- Show the math ---- */
+table.strat .cell[data-key] { cursor: pointer; }
+table.strat .cell[data-key]:hover { filter: brightness(1.06); }
+table.strat .cell.sel { box-shadow: 0 0 0 3px var(--gold); }
+.math { display: grid; gap: 14px; scroll-margin-top: 12px; }
+.math-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; }
+.math-head h3 { font-size: 1.35rem; }
+.math-head .evs { font-family: var(--font-mono); font-size: .9rem; color: var(--muted); }
+.math-why { max-width: 72ch; }
+.math-why p + p { margin-top: 6px; }
+.math-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.math-grid.hand { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+@media (max-width: 960px) { .math-grid, .math-grid.hand { grid-template-columns: 1fr; } }
+.math .box { align-content: start; }
+.eq { font-family: var(--font-mono); font-size: .8rem; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }
+.eq b { color: var(--ink); font-weight: 600; }
+table.data tr.pick { cursor: pointer; }
+table.data tr.pick:hover td { background: color-mix(in srgb, var(--gold) 8%, transparent); }
+table.data tr.on td { background: color-mix(in srgb, var(--gold) 16%, transparent); }
+table.data td.better { font-weight: 700; color: var(--ink); }
+table.data tfoot td { border-bottom: 0; font-weight: 600; }
+.rk { display: inline-block; min-width: 1.7em; padding: 1px 4px; margin: 0 2px 2px 0; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); font-family: var(--font-mono); font-size: .78rem; text-align: center; }
+button.drill { all: unset; cursor: pointer; border-bottom: 1px dotted currentColor; white-space: nowrap; }
+.rks { white-space: nowrap; }
+button.drill:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .85rem; }
+.crumbs button { all: unset; cursor: pointer; color: var(--muted); }
+.crumbs button:hover { color: var(--ink); }
+.check { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: .85rem; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--win) 12%, transparent); }
+.check .ok { color: var(--win); font-weight: 700; }
+.check .bad { color: var(--cinnabar); font-weight: 700; }
+.verify { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.verify .btn { padding: 7px 16px; font-size: .88rem; }
+.th-note { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.same-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .same-grid { grid-template-columns: 1fr; } }
+.same-grid .box p { font-size: .9rem; }
+.eqcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .eqcards { grid-template-columns: 1fr; } }
 </style>
 
 </head>
@@ -584,6 +624,14 @@ table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
       <div class="legend"><span><span class="sw" style="background:var(--cinnabar);border-radius:50%"></span>Hit</span><span><span class="sw" style="background:var(--stand);border-radius:50%"></span>Stand</span><span>Larger dot = the chart's choice</span></div>
       <div class="dumb-grid narrow" id="dumb"></div>
     </div>
+  </div>
+
+  <div class="section math" id="math" aria-live="polite">
+    <div class="sec-head chart-sub">
+      <span class="eyebrow">Show the math</span>
+      <p class="small">Tap any cell in your chart to see where its numbers come from: the chance of every outcome, the EV sum, and every hand that lands in the cell. This page recomputes it all from scratch and checks it against the solver.</p>
+    </div>
+    <div id="math-body"></div>
   </div>
 
   <div class="section bank-sec">
@@ -977,6 +1025,47 @@ table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
     </div>
   </div>
 
+  <!-- Same total, different value -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="eyebrow">Same total, different value</span>
+      <h3>Why a 16 on two cards isn't a 16 on four</h3>
+      <p class="small">The chart gives the same total a different EV depending on how many cards you hold. Two things cause it: the banker reads your card count, and your own cards change what's left in the deck. Exact numbers for the rule chosen at the top:</p>
+    </div>
+    <div class="scroll"><table class="data" id="same-table"></table></div>
+    <div class="same-grid">
+      <div class="box">
+        <h4>1 · The banker reads your card count</h4>
+        <p>Look at the stand side. Against two cards the banker busts <b data-why="2|16|h:bankerBust">–</b> and never stops on 16, because your hand could be a 20. Against four cards he busts only <b data-why="4|16|h:bankerBust">–</b> and stops on 16 <b data-why="4|16|h:banker16">–</b> of the time, because half of four-card players have already busted.</p>
+        <p>His 16 only ties your 16 but loses to your 17. So more cards make a standing 16 <em>worse</em> and a standing 17 <em>better</em>.</p>
+      </div>
+      <div class="box">
+        <h4>2 · Card removal</h4>
+        <p>Look at the hit side. Only an Ace to 5 saves a 16. A two-card 16 like 10-6 leaves all 20 of them in the deck. A three-card 16 like 2-4-10 has used two of them up: on average <b data-why="3|16|h:safe">–</b> are left, and <b data-why="4|16|h:safe">–</b> for four cards.</p>
+        <p>So your bust chance on the hit climbs from <b data-why="2|16|h:bust">–</b> to <b data-why="3|16|h:bust">–</b> to <b data-why="4|16|h:bust">–</b>.</p>
+      </div>
+      <div class="box">
+        <h4>3 · Where the hit leads</h4>
+        <p>From four cards, every card that doesn't bust you makes <span class="cjk">五龙</span>, paid 2× or 3×. That is why hitting a four-card 16 (<b data-why="4|16|h:hit">–</b>) beats hitting a three-card 16 (<b data-why="3|16|h:hit">–</b>), even though you bust more often.</p>
+        <p class="small">Within one cell the exact cards matter too. Tap a cell on the Strategy chart tab to see every hand in it.</p>
+      </div>
+    </div>
+    <div class="eqcards">
+      <div class="box">
+        <h4>Close call: two-card hard 16</h4>
+        <p class="small">Standing wins only when the banker busts. Hitting wins more often but busts you 60% of the time, and a third of those busts are saved by a banker bust. The two sums land almost on top of each other.</p>
+        <div id="eq-16"></div>
+        <button type="button" class="btn ghost" data-open="2|16|h">See every hand and next card</button>
+      </div>
+      <div class="box">
+        <h4>Four-card hard 17: the bust rule decides it</h4>
+        <p class="small">Hit, and about 28% of cards (Ace to 4) make <span class="cjk">五龙</span>, paid 2× or 3×. Everything else busts you. With a 1× bust the wins outweigh the losses; with a 2× bust the same busts cost double and standing wins.</p>
+        <div id="eq-17"></div>
+        <button type="button" class="btn ghost" data-open="4|17|h">See every hand and next card</button>
+      </div>
+    </div>
+  </div>
+
   <!-- The banker -->
   <div class="section">
     <div class="sec-head">
@@ -1023,6 +1112,7 @@ table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
     <summary>How these numbers were made</summary>
     <div class="prose">
       <p><b>Exact solve.</b> All 2,983 possible hands of two to five cards from one deck were enumerated with exact card-removal odds. Your best play depends on how the banker plays and his depends on yours, so it is a two-player game, solved with CFR+ until neither side could gain more than 0.002% per hand by changing strategy. That is the same idea as solving poker: both sides are assumed to play perfectly.</p>
+      <p><b>Check it yourself.</b> Tap any cell on the Strategy chart tab. Your browser recomputes that cell from scratch with a separate program that walks every next card and every way the banker can play, shows the solver's numbers next to its own, and can deal the hand 200,000 times as a third check. The hit side is plain arithmetic: each next card's chance times what the new hand is worth.</p>
       <p><b>Monte Carlo check.</b> 20 million shuffled hands per matchup landed within about two standard errors of the exact values every time. The bust chances and outcome splits on this page come from 3 to 6 million simulated hands each. Run your own on the Play tab.</p>
       <p><b>Why it's fast.</b> Poker and liar's dice need CFR over millions or billions of situations. Banluck is the same kind of game, but the banker only ever sees your card count, so it is small enough to solve in about two and a half minutes.</p>
     </div>
@@ -1350,7 +1440,182 @@ table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
 });
 
 window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlement, dealing and\n * hand simulation. Shared by the browser page and the Node solvers.\n *\n * Ranks are encoded 1..10 (1 = Ace, 10 = any ten-value card: 10/J/Q/K).\n */\n(function (root, factory) {\n  if (typeof module === 'object' && module.exports) module.exports = factory();\n  else root.BanluckCore = factory();\n})(typeof self !== 'undefined' ? self : this, function () {\n  'use strict';\n\n  const DEFAULT_RULES = Object.freeze({\n    decks: 1,\n    playerMinStand: 16,\n    dealerMinStand: 16,\n    maxCards: 5,\n    bothBustPush: true,\n    fiveCardBustMult: 2, // 1 = normal bust, 2 = a 5-card bust loses double (player only)\n    pay: Object.freeze({ banBan: 3, banLuck: 2, triple7: 7, dragon: 2, dragon21: 3 }),\n  });\n\n  function rulesWith(overrides) {\n    const r = Object.assign({}, DEFAULT_RULES, overrides || {});\n    r.pay = Object.assign({}, DEFAULT_RULES.pay, (overrides && overrides.pay) || {});\n    return r;\n  }\n\n  // ---- Hand values ---------------------------------------------------------\n  // Ace values depend on how many cards are held:\n  //   2 cards: Ace = 11 or 10      3 cards: Ace = 10 or 1      4-5 cards: Ace = 1\n  // The best total is the highest one that does not exceed 21.\n\n  /** Evaluate from summary counts: n cards, hard sum (Aces as 1), number of Aces. */\n  function valueFrom(n, hard, aces) {\n    if (aces === 0 || n >= 4) return { total: hard, soft: false };\n    if (n === 2) {\n      // one Ace: 11 (or 10). Two Aces is Ban-Ban; value it as 21 for display.\n      if (aces >= 2) return { total: 21, soft: true };\n      return { total: hard + 10, soft: true }; // other card + 11; never exceeds 21\n    }\n    // n === 3: each Ace may be 1 or 10 -> add 9 per upgraded Ace\n    let best = hard;\n    let soft = false;\n    for (let k = 1; k <= aces; k++) {\n      const t = hard + 9 * k;\n      if (t <= 21) { best = t; soft = true; }\n    }\n    return { total: best, soft };\n  }\n\n  function summarize(cards) {\n    let hard = 0, aces = 0, sevens = 0, tens = 0;\n    for (const c of cards) {\n      hard += c;\n      if (c === 1) aces++;\n      if (c === 7) sevens++;\n      if (c === 10) tens++;\n    }\n    return { n: cards.length, hard, aces, sevens, tens };\n  }\n\n  /** Two-card instant specials: 'banBan' (A-A), 'banLuck' (A + ten-value), or null. */\n  function special2(cards) {\n    if (cards.length !== 2) return null;\n    const s = summarize(cards);\n    if (s.aces === 2) return 'banBan';\n    if (s.aces === 1 && s.tens === 1) return 'banLuck';\n    return null;\n  }\n\n  // Final-hand tiers, best first: 777 > 五龙 21 > 五龙 (Five Dragons) > regular.\n  const TIER = { BUST: -1, REGULAR: 0, DRAGON: 1, DRAGON21: 2, TRIPLE7: 3 };\n\n  /** Full evaluation of a final (or in-progress) hand. */\n  function evaluate(cards, rules) {\n    rules = rules || DEFAULT_RULES;\n    const s = summarize(cards);\n    const v = valueFrom(s.n, s.hard, s.aces);\n    const bust = v.total > 21;\n    let tier = TIER.REGULAR, mult = 1, label = String(v.total);\n    if (bust) {\n      tier = TIER.BUST;\n      mult = s.n === 5 ? rules.fiveCardBustMult : 1;\n      label = s.n === 5 ? 'Five-card bust' : 'Bust';\n    } else if (s.n === 3 && s.sevens === 3) {\n      tier = TIER.TRIPLE7; mult = rules.pay.triple7; label = '777';\n    } else if (s.n === 5) {\n      if (v.total === 21) { tier = TIER.DRAGON21; mult = rules.pay.dragon21; label = 'Five Dragons 21'; }\n      else { tier = TIER.DRAGON; mult = rules.pay.dragon; label = 'Five Dragons'; }\n    }\n    // A hand must stop when bust, at 5 cards, or on 777.\n    const terminal = bust || s.n >= 5 || tier === TIER.TRIPLE7;\n    return { n: s.n, total: v.total, soft: v.soft, bust, tier, mult, label, terminal };\n  }\n\n  /**\n   * Settle two finished hands (neither had a 2-card special).\n   * Returns the player's result in betting units (+ = player wins).\n   */\n  function settle(p, d, rules) {\n    rules = rules || DEFAULT_RULES;\n    if (p.bust) {\n      if (d.bust) return rules.bothBustPush ? 0 : -p.mult;\n      return -Math.max(p.mult, d.mult);\n    }\n    if (d.bust) return p.mult;\n    if (p.tier !== d.tier) return p.tier > d.tier ? p.mult : -d.mult;\n    if (p.tier !== TIER.REGULAR) return 0; // same special tier: push\n    return p.total > d.total ? 1 : p.total < d.total ? -1 : 0;\n  }\n\n  /** Settle the instant 2-card specials. Returns null if neither side has one. */\n  function settleSpecials(pSpec, dSpec, rules) {\n    rules = rules || DEFAULT_RULES;\n    if (!pSpec && !dSpec) return null;\n    const rank = { banBan: 2, banLuck: 1 };\n    const pr = pSpec ? rank[pSpec] : 0, dr = dSpec ? rank[dSpec] : 0;\n    if (pr === dr) return 0;\n    return pr > dr ? rules.pay[pSpec] : -rules.pay[dSpec];\n  }\n\n  /** Chart key for a player/dealer decision: \"<cards>|<total>|<s|h>\". */\n  function stateKey(cards) {\n    const s = summarize(cards);\n    const v = valueFrom(s.n, s.hard, s.aces);\n    return s.n + '|' + v.total + '|' + (v.soft ? 's' : 'h');\n  }\n\n  // ---- Random numbers & dealing -------------------------------------------\n  /** Small fast seeded PRNG (xoshiro128**). */\n  function rng(seed) {\n    // expand the seed into 128 bits of state with splitmix32\n    let z = seed >>> 0;\n    const mix = () => {\n      z = (z + 0x9e3779b9) | 0;\n      let t = z ^ (z >>> 16); t = Math.imul(t, 0x21f0aaad);\n      t ^= t >>> 15; t = Math.imul(t, 0x735a2d97);\n      return (t ^ (t >>> 15)) >>> 0;\n    };\n    let a = mix(), b = mix(), c = mix(), d = mix();\n    function next() {\n      const t = b << 9;\n      let r = Math.imul(b, 5); r = Math.imul((r << 7) | (r >>> 25), 9);\n      c ^= a; d ^= b; b ^= c; a ^= d; c ^= t; d = (d << 11) | (d >>> 21);\n      return (r >>> 0) / 4294967296;\n    }\n    for (let i = 0; i < 16; i++) next();\n    return next;\n  }\n\n  function newDeck(decks) {\n    const deck = [];\n    for (let k = 0; k < (decks || 1); k++)\n      for (let r = 1; r <= 10; r++) {\n        const copies = r === 10 ? 16 : 4;\n        for (let i = 0; i < copies; i++) deck.push(r);\n      }\n    return deck;\n  }\n\n  /** Draws cards without replacement using a lazy Fisher-Yates over a fresh deck. */\n  function Shoe(rand, decks) {\n    this.rand = rand;\n    this.base = newDeck(decks);\n    this.cards = this.base.slice();\n    this.top = 0;\n  }\n  Shoe.prototype.shuffle = function () { this.top = 0; };\n  Shoe.prototype.draw = function () {\n    const a = this.cards, i = this.top + Math.floor(this.rand() * (a.length - this.top));\n    const c = a[i]; a[i] = a[this.top]; a[this.top] = c;\n    this.top++;\n    return c;\n  };\n\n  // ---- Policies -------------------------------------------------------------\n  // A player policy is fn(cards) -> probability of hitting (only asked when a\n  // real choice exists: total >= min stand, < 5 cards, not finished).\n  // A dealer policy is fn(cards, playerCardCount) -> probability of hitting.\n\n  function chartPolicy(chart) {\n    // chart: { key: hitProbability }\n    return (cards) => {\n      const p = chart[stateKey(cards)];\n      return p === undefined ? 0 : p;\n    };\n  }\n  function dealerChartPolicy(chart) {\n    // chart: { \"<np>\": { key: hitProbability } }\n    return (cards, np) => {\n      const t = chart[np];\n      const p = t && t[stateKey(cards)];\n      return p === undefined ? 0 : p;\n    };\n  }\n  const standOnMin = () => 0;\n\n  function mustHit(e, min) { return !e.terminal && e.total < min; }\n\n  /**\n   * Play one complete hand. Returns\n   * { result, player:[...], dealer:[...], pSpec, dSpec, pEval, dEval }.\n   */\n  function playHand(shoe, rules, playerPolicy, dealerPolicy) {\n    rules = rules || DEFAULT_RULES;\n    shoe.shuffle();\n    const rand = shoe.rand;\n    const player = [shoe.draw(), shoe.draw()];\n    const dealer = [shoe.draw(), shoe.draw()];\n    const pSpec = special2(player), dSpec = special2(dealer);\n    const sp = settleSpecials(pSpec, dSpec, rules);\n    if (sp !== null) return { result: sp, player, dealer, pSpec, dSpec, pEval: null, dEval: null };\n\n    let pe = evaluate(player, rules);\n    while (!pe.terminal) {\n      if (!mustHit(pe, rules.playerMinStand)) {\n        const h = playerPolicy(player);\n        if (!(h >= 1 || (h > 0 && rand() < h))) break;\n      }\n      player.push(shoe.draw());\n      pe = evaluate(player, rules);\n    }\n    const np = player.length;\n    let de = evaluate(dealer, rules);\n    while (!de.terminal) {\n      if (!mustHit(de, rules.dealerMinStand)) {\n        const h = dealerPolicy(dealer, np);\n        if (!(h >= 1 || (h > 0 && rand() < h))) break;\n      }\n      dealer.push(shoe.draw());\n      de = evaluate(dealer, rules);\n    }\n    return { result: settle(pe, de, rules), player, dealer, pSpec, dSpec, pEval: pe, dEval: de };\n  }\n\n  /**\n   * Monte Carlo: simulate n hands. Returns mean, standard error and an\n   * outcome breakdown. `onProgress(done)` is optional.\n   */\n  function simulate(opts) {\n    const rules = opts.rules || DEFAULT_RULES;\n    const rand = rng(opts.seed || 12345);\n    const shoe = new Shoe(rand, rules.decks);\n    let sum = 0, sumSq = 0, win = 0, loss = 0, push = 0;\n    const tally = {};\n    const bump = (k) => { tally[k] = (tally[k] || 0) + 1; };\n    for (let i = 0; i < opts.hands; i++) {\n      const h = playHand(shoe, rules, opts.playerPolicy, opts.dealerPolicy);\n      sum += h.result; sumSq += h.result * h.result;\n      if (h.result > 0) win++; else if (h.result < 0) loss++; else push++;\n      if (opts.tally) {\n        if (h.pSpec) bump('player ' + h.pSpec);\n        if (h.dSpec) bump('dealer ' + h.dSpec);\n        if (h.pEval) {\n          bump('player ' + (h.pEval.tier === TIER.REGULAR ? 'regular' : h.pEval.label));\n          bump('dealer ' + (h.dEval.tier === TIER.REGULAR ? 'regular' : h.dEval.label));\n          if (h.pEval.bust && h.dEval.bust) bump('both bust');\n        }\n      }\n    }\n    const n = opts.hands;\n    const mean = sum / n;\n    const variance = sumSq / n - mean * mean;\n    return { hands: n, mean, se: Math.sqrt(variance / n), sd: Math.sqrt(variance), win: win / n, loss: loss / n, push: push / n, tally };\n  }\n\n  return {\n    DEFAULT_RULES, rulesWith, TIER, valueFrom, summarize, special2, evaluate, settle,\n    settleSpecials, stateKey, rng, newDeck, Shoe, chartPolicy, dealerChartPolicy,\n    standOnMin, playHand, simulate,\n  };\n});\n";</script>
-<script>window.BL_DATA = {"generated":"2026-10-02T04:53:56.758Z","compositions":2983,"variants":{"bust1":{"rules":{"decks":1,"playerMinStand":16,"dealerMinStand":16,"maxCards":5,"bothBustPush":true,"fiveCardBustMult":1,"pay":{"banBan":3,"banLuck":2,"triple7":7,"dragon":2,"dragon21":3}},"value":-0.010389,"exploitability":0.00001801043706792932,"chart":{"2|20|h":{"hit":0,"margin":-1.2059,"standEV":0.5188,"hitEV":-0.6871,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.7629,"standEV":0.1937,"hitEV":-0.5692,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.3923,"standEV":-0.0799,"hitEV":-0.4722,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.1046,"standEV":-0.2787,"hitEV":-0.3833,"reach":0.060332},"2|16|h":{"hit":0.2306,"margin":-0.0017,"standEV":-0.342,"hitEV":-0.3436,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.6053,"standEV":0.545,"hitEV":-0.0602,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.243,"standEV":0.2111,"hitEV":-0.0319,"reach":0.012066},"2|18|s":{"hit":0.9999,"margin":0.1661,"standEV":-0.053,"hitEV":0.1132,"reach":0.012066},"2|17|s":{"hit":0.9999,"margin":0.3547,"standEV":-0.2499,"hitEV":0.1048,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.4636,"standEV":-0.3098,"hitEV":0.1538,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6015,"standEV":0.7997,"hitEV":-0.8018,"reach":0.041378},"3|20|h":{"hit":0,"margin":-1.2143,"standEV":0.5476,"hitEV":-0.6667,"reach":0.041981},"3|19|h":{"hit":0,"margin":-0.7957,"standEV":0.2364,"hitEV":-0.5593,"reach":0.044756},"3|18|h":{"hit":0,"margin":-0.4568,"standEV":-0.0253,"hitEV":-0.4822,"reach":0.048194},"3|17|h":{"hit":0,"margin":-0.1516,"standEV":-0.274,"hitEV":-0.4255,"reach":0.050909},"3|16|h":{"hit":0.9997,"margin":0.0394,"standEV":-0.4054,"hitEV":-0.366,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.8026,"standEV":0.8351,"hitEV":0.0325,"reach":0.0096529},"3|20|s":{"hit":0.9928,"margin":0.0179,"standEV":0.5794,"hitEV":0.5973,"reach":0.0088083},"3|19|s":{"hit":1,"margin":0.3684,"standEV":0.2635,"hitEV":0.6319,"reach":0.0086876},"3|18|s":{"hit":1,"margin":0.6537,"standEV":0.0003,"hitEV":0.654,"reach":0.0076017},"3|17|s":{"hit":1,"margin":0.9647,"standEV":-0.2538,"hitEV":0.7109,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.2247,"standEV":-0.3892,"hitEV":0.8355,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-1.6347,"standEV":0.8373,"hitEV":-0.7974,"reach":0.019284},"4|20|h":{"hit":0,"margin":-1.1067,"standEV":0.5973,"hitEV":-0.5094,"reach":0.019634},"4|19|h":{"hit":0,"margin":-0.6136,"standEV":0.2951,"hitEV":-0.3185,"reach":0.01964},"4|18|h":{"hit":0,"margin":-0.1855,"standEV":0.0467,"hitEV":-0.1388,"reach":0.019423},"4|17|h":{"hit":1,"margin":0.2443,"standEV":-0.1907,"hitEV":0.0536,"reach":0.019044},"4|16|h":{"hit":1,"margin":0.6895,"standEV":-0.4285,"hitEV":0.261,"reach":0.015151}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":1,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"bankerChart":{"2":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0.7248,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0.1633,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0.1299,"4|17|h":1,"4|16|h":1},"3":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0.9989,"2|20|s":0,"2|19|s":0,"2|18|s":0.9998,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0.7518,"3|21|s":0,"3|20|s":0.9995,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"4":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9996,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"5":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0.9997,"2|16|s":0.9999,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":1,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0.6368,"4|16|h":1}},"bankerEV":{"2":{"2|20|h":[0.7133,-0.9185],"2|19|h":[0.2092,-0.7617],"2|18|h":[-0.1579,-0.6363],"2|17|h":[-0.5203,-0.5299],"2|16|h":[-0.8604,-0.4885],"2|20|s":[0.6734,-0.1101],"2|19|s":[0.1536,-0.0911],"2|18|s":[-0.2,0.0303],"2|17|s":[-0.5426,0.0123],"2|16|s":[-0.844,0.1159],"3|21|h":[1,-1],"3|20|h":[0.6768,-0.8343],"3|19|h":[0.1689,-0.7031],"3|18|h":[-0.1784,-0.6147],"3|17|h":[-0.5182,-0.5549],"3|16|h":[-0.8489,-0.4869],"3|21|s":[1,-0.071],"3|20|s":[0.6767,0.5792],"3|19|s":[0.1784,0.6132],"3|18|s":[-0.1616,0.6009],"3|17|s":[-0.503,0.655],"3|16|s":[-0.8435,0.8203],"4|21|h":[1,-1],"4|20|h":[0.6797,-0.6899],"4|19|h":[0.1759,-0.4715],"4|18|h":[-0.1702,-0.2654],"4|17|h":[-0.5147,-0.0498],"4|16|h":[-0.8503,0.1877]},"3":{"2|20|h":[0.6045,-0.5863],"2|19|h":[0.381,-0.4667],"2|18|h":[0.1385,-0.3667],"2|17|h":[-0.1181,-0.269],"2|16|h":[-0.2515,-0.2278],"2|20|s":[0.6301,0.0618],"2|19|s":[0.4055,0.1013],"2|18|s":[0.1685,0.2489],"2|17|s":[-0.0894,0.2253],"2|16|s":[-0.228,0.2597],"3|21|h":[0.8613,-0.6247],"3|20|h":[0.6187,-0.495],"3|19|h":[0.3936,-0.3983],"3|18|h":[0.154,-0.3296],"3|17|h":[-0.1013,-0.2797],"3|16|h":[-0.2293,-0.2256],"3|21|s":[0.8667,0.1593],"3|20|s":[0.6287,0.6827],"3|19|s":[0.402,0.713],"3|18|s":[0.1635,0.7473],"3|17|s":[-0.0845,0.7993],"3|16|s":[-0.2071,0.9328],"4|21|h":[0.8636,-0.6104],"4|20|h":[0.6206,-0.3274],"4|19|h":[0.396,-0.1475],"4|18|h":[0.1609,0.0231],"4|17|h":[-0.0832,0.2009],"4|16|h":[-0.2042,0.3909]},"4":{"2|20|h":[0.6443,-0.427],"2|19|h":[0.4016,-0.3318],"2|18|h":[0.1653,-0.249],"2|17|h":[0.0539,-0.1691],"2|16|h":[0.0649,-0.1173],"2|20|s":[0.6508,0.1543],"2|19|s":[0.4223,0.1713],"2|18|s":[0.2011,0.3078],"2|17|s":[0.1,0.3275],"2|16|s":[0.1114,0.392],"3|21|h":[0.8863,-0.4638],"3|20|h":[0.6584,-0.353],"3|19|h":[0.4303,-0.2709],"3|18|h":[0.2037,-0.2114],"3|17|h":[0.0941,-0.1685],"3|16|h":[0.0966,-0.1162],"3|21|s":[0.8881,0.2322],"3|20|s":[0.6637,0.7152],"3|19|s":[0.4429,0.7406],"3|18|s":[0.2283,0.7684],"3|17|s":[0.1261,0.8223],"3|16|s":[0.127,0.9543],"4|21|h":[0.8875,-0.4485],"4|20|h":[0.6632,-0.1954],"4|19|h":[0.4404,-0.0398],"4|18|h":[0.225,0.1162],"4|17|h":[0.1213,0.2767],"4|16|h":[0.1232,0.4577]},"5":{"2|20|h":[-0.5742,-1.0594],"2|19|h":[-0.5714,-1.0207],"2|18|h":[-0.5682,-0.9793],"2|17|h":[-0.562,-0.9337],"2|16|h":[-0.5512,-0.8734],"2|20|s":[-0.4656,-0.6595],"2|19|s":[-0.4624,-0.6192],"2|18|s":[-0.456,-0.5645],"2|17|s":[-0.4435,-0.4276],"2|16|s":[-0.4227,-0.3771],"3|21|h":[-0.5308,-1.048],"3|20|h":[-0.5209,-1.0033],"3|19|h":[-0.5079,-0.9582],"3|18|h":[-0.4964,-0.9143],"3|17|h":[-0.482,-0.8681],"3|16|h":[-0.4676,-0.8183],"3|21|s":[-0.4186,-0.5236],"3|20|s":[-0.4061,-0.2677],"3|19|s":[-0.3924,-0.1431],"3|18|s":[-0.3787,-0.0439],"3|17|s":[-0.3605,0.0654],"3|16|s":[-0.3427,0.1684],"4|21|h":[-0.4504,-0.9944],"4|20|h":[-0.437,-0.7553],"4|19|h":[-0.4225,-0.6426],"4|18|h":[-0.4091,-0.521],"4|17|h":[-0.3966,-0.3872],"4|16|h":[-0.3819,-0.2318]}},"chartEV":-0.009875,"chartVsBR":-0.011397,"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the banker)","evVsEq":-0.047202,"evVsBR":-0.049983},"casino17":{"name":"Casino habit: hit 16, stand 17+","evVsEq":-0.031277,"evVsBR":-0.035604},"dragonChaser":{"name":"Dragon chaser: always hit 4 cards","evVsEq":-0.076784,"evVsBR":-0.080374}},"baselineCharts":{"standAtMin":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0},"casino17":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"dragonChaser":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":1,"4|20|h":1,"4|19|h":1,"4|18|h":1,"4|17|h":1,"4|16|h":1}}},"bust2":{"rules":{"decks":1,"playerMinStand":16,"dealerMinStand":16,"maxCards":5,"bothBustPush":true,"fiveCardBustMult":2,"pay":{"banBan":3,"banLuck":2,"triple7":7,"dragon":2,"dragon21":3}},"value":-0.031046,"exploitability":0.00001952624213154286,"chart":{"2|20|h":{"hit":0,"margin":-1.2051,"standEV":0.5188,"hitEV":-0.6863,"reach":0.090498},"2|19|h":{"hit":0,"margin":-0.7632,"standEV":0.1937,"hitEV":-0.5695,"reach":0.048265},"2|18|h":{"hit":0,"margin":-0.3927,"standEV":-0.08,"hitEV":-0.4727,"reach":0.05279},"2|17|h":{"hit":0,"margin":-0.1051,"standEV":-0.2787,"hitEV":-0.3837,"reach":0.060332},"2|16|h":{"hit":0.2306,"margin":-0.0017,"standEV":-0.3418,"hitEV":-0.3435,"reach":0.064857},"2|20|s":{"hit":0,"margin":-0.6456,"standEV":0.545,"hitEV":-0.1006,"reach":0.012066},"2|19|s":{"hit":0,"margin":-0.2841,"standEV":0.2111,"hitEV":-0.0731,"reach":0.012066},"2|18|s":{"hit":0.9998,"margin":0.1203,"standEV":-0.0531,"hitEV":0.0672,"reach":0.012066},"2|17|s":{"hit":0.9999,"margin":0.2979,"standEV":-0.2498,"hitEV":0.0481,"reach":0.012066},"2|16|s":{"hit":1,"margin":0.3836,"standEV":-0.3097,"hitEV":0.0739,"reach":0.012066},"3|21|h":{"hit":0,"margin":-1.6013,"standEV":0.7995,"hitEV":-0.8018,"reach":0.041378},"3|20|h":{"hit":0,"margin":-1.2146,"standEV":0.5473,"hitEV":-0.6673,"reach":0.041981},"3|19|h":{"hit":0,"margin":-0.7991,"standEV":0.236,"hitEV":-0.5631,"reach":0.044756},"3|18|h":{"hit":0,"margin":-0.457,"standEV":-0.026,"hitEV":-0.483,"reach":0.048195},"3|17|h":{"hit":0,"margin":-0.1509,"standEV":-0.2747,"hitEV":-0.4255,"reach":0.05091},"3|16|h":{"hit":0.9257,"margin":0.0199,"standEV":-0.405,"hitEV":-0.3851,"reach":0.049231},"3|21|s":{"hit":0,"margin":-0.9675,"standEV":0.8349,"hitEV":-0.1326,"reach":0.0096529},"3|20|s":{"hit":0,"margin":-0.1678,"standEV":0.5791,"hitEV":0.4113,"reach":0.0088082},"3|19|s":{"hit":0.9999,"margin":0.2093,"standEV":0.2631,"hitEV":0.4724,"reach":0.0086876},"3|18|s":{"hit":1,"margin":0.4937,"standEV":-0.0003,"hitEV":0.4934,"reach":0.0076016},"3|17|s":{"hit":1,"margin":0.8028,"standEV":-0.2545,"hitEV":0.5483,"reach":0.0065158},"3|16|s":{"hit":1,"margin":1.007,"standEV":-0.3887,"hitEV":0.6183,"reach":0.0047059},"4|21|h":{"hit":0,"margin":-2.409,"standEV":0.8371,"hitEV":-1.5719,"reach":0.016202},"4|20|h":{"hit":0,"margin":-1.8214,"standEV":0.5975,"hitEV":-1.2239,"reach":0.0187},"4|19|h":{"hit":0,"margin":-1.2758,"standEV":0.2957,"hitEV":-0.9801,"reach":0.018668},"4|18|h":{"hit":0,"margin":-0.7972,"standEV":0.0472,"hitEV":-0.75,"reach":0.018471},"4|17|h":{"hit":0,"margin":-0.312,"standEV":-0.1905,"hitEV":-0.5024,"reach":0.018092},"4|16|h":{"hit":1,"margin":0.1961,"standEV":-0.4286,"hitEV":-0.2325,"reach":0.014481}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"bankerChart":{"2":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0.7234,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0.1677,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0.1298,"4|17|h":1,"4|16|h":1},"3":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0.9986,"2|20|s":0,"2|19|s":0,"2|18|s":0.9997,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0.7748,"3|21|s":0,"3|20|s":0.9994,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"4":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0.9998,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9975,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"5":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9989,"3|19|s":0.9999,"3|18|s":0.9999,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0}},"bankerEV":{"2":{"2|20|h":[0.7133,-0.9185],"2|19|h":[0.2092,-0.7617],"2|18|h":[-0.1579,-0.6363],"2|17|h":[-0.5203,-0.5302],"2|16|h":[-0.8604,-0.4885],"2|20|s":[0.6734,-0.1114],"2|19|s":[0.1536,-0.0925],"2|18|s":[-0.2,0.0303],"2|17|s":[-0.5427,0.0123],"2|16|s":[-0.844,0.1159],"3|21|h":[1,-1],"3|20|h":[0.6768,-0.8343],"3|19|h":[0.1689,-0.7031],"3|18|h":[-0.1784,-0.6147],"3|17|h":[-0.5182,-0.5549],"3|16|h":[-0.8489,-0.4869],"3|21|s":[1,-0.071],"3|20|s":[0.6767,0.5792],"3|19|s":[0.1784,0.6132],"3|18|s":[-0.1617,0.6009],"3|17|s":[-0.5031,0.6549],"3|16|s":[-0.8436,0.8203],"4|21|h":[1,-1],"4|20|h":[0.6797,-0.6899],"4|19|h":[0.1759,-0.4716],"4|18|h":[-0.1702,-0.2654],"4|17|h":[-0.5148,-0.0498],"4|16|h":[-0.8503,0.1877]},"3":{"2|20|h":[0.5936,-0.5984],"2|19|h":[0.3529,-0.478],"2|18|h":[0.1201,-0.378],"2|17|h":[-0.1289,-0.2815],"2|16|h":[-0.2664,-0.2403],"2|20|s":[0.6224,0.0531],"2|19|s":[0.3873,0.0916],"2|18|s":[0.1557,0.2396],"2|17|s":[-0.0939,0.2184],"2|16|s":[-0.2397,0.2506],"3|21|h":[0.8658,-0.6369],"3|20|h":[0.6075,-0.5066],"3|19|h":[0.3668,-0.4094],"3|18|h":[0.1354,-0.3413],"3|17|h":[-0.1113,-0.2918],"3|16|h":[-0.2439,-0.2377],"3|21|s":[0.8701,0.1498],"3|20|s":[0.6211,0.6778],"3|19|s":[0.3837,0.7043],"3|18|s":[0.152,0.7367],"3|17|s":[-0.0902,0.7915],"3|16|s":[-0.2179,0.9264],"4|21|h":[0.8675,-0.6217],"4|20|h":[0.6111,-0.3391],"4|19|h":[0.3732,-0.1579],"4|18|h":[0.1452,0.0135],"4|17|h":[-0.0909,0.1915],"4|16|h":[-0.2169,0.3822]},"4":{"2|20|h":[0.7046,-0.4685],"2|19|h":[0.4879,-0.3681],"2|18|h":[0.2759,-0.2774],"2|17|h":[0.0712,-0.1822],"2|16|h":[-0.0238,-0.1244],"2|20|s":[0.704,0.1539],"2|19|s":[0.4963,0.1733],"2|18|s":[0.2967,0.3357],"2|17|s":[0.1096,0.3264],"2|16|s":[0.0265,0.3649],"3|21|h":[0.9107,-0.5069],"3|20|h":[0.7194,-0.3912],"3|19|h":[0.5144,-0.3028],"3|18|h":[0.3098,-0.235],"3|17|h":[0.1109,-0.1814],"3|16|h":[0.0143,-0.1286],"3|21|s":[0.909,0.2251],"3|20|s":[0.7161,0.7285],"3|19|s":[0.515,0.7601],"3|18|s":[0.3187,0.7869],"3|17|s":[0.1364,0.8392],"3|16|s":[0.0507,0.9318],"4|21|h":[0.9108,-0.4893],"4|20|h":[0.7204,-0.2343],"4|19|h":[0.5184,-0.0781],"4|18|h":[0.3226,0.0798],"4|17|h":[0.136,0.2438],"4|16|h":[0.0459,0.4284]},"5":{"2|20|h":[-0.367,-1.1968],"2|19|h":[-0.3619,-1.1324],"2|18|h":[-0.3564,-1.0628],"2|17|h":[-0.3476,-0.9868],"2|16|h":[-0.3311,-0.9033],"2|20|s":[-0.2262,-0.5812],"2|19|s":[-0.2204,-0.5325],"2|18|s":[-0.2115,-0.4685],"2|17|s":[-0.1922,-0.403],"2|16|s":[-0.1564,-0.2408],"3|21|h":[-0.3063,-1.1966],"3|20|h":[-0.2919,-1.1244],"3|19|h":[-0.275,-1.0545],"3|18|h":[-0.2605,-0.985],"3|17|h":[-0.2448,-0.914],"3|16|h":[-0.23,-0.8408],"3|21|s":[-0.1638,-0.511],"3|20|s":[-0.1506,-0.1332],"3|19|s":[-0.1296,-0.0352],"3|18|s":[-0.1108,0.0362],"3|17|s":[-0.0927,0.1074],"3|16|s":[-0.082,0.1649],"4|21|h":[-0.2066,-1.1474],"4|20|h":[-0.1862,-0.8992],"4|19|h":[-0.1698,-0.7963],"4|18|h":[-0.1552,-0.6788],"4|17|h":[-0.1415,-0.5465],"4|16|h":[-0.1208,-0.3878]}},"chartEV":-0.030566,"chartVsBR":-0.032091,"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the banker)","evVsEq":-0.053738,"evVsBR":-0.056516},"casino17":{"name":"Casino habit: hit 16, stand 17+","evVsEq":-0.044199,"evVsBR":-0.048513},"dragonChaser":{"name":"Dragon chaser: always hit 4 cards","evVsEq":-0.124818,"evVsBR":-0.128357}},"baselineCharts":{"standAtMin":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0},"casino17":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"dragonChaser":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":1,"4|20|h":1,"4|19|h":1,"4|18|h":1,"4|17|h":1,"4|16|h":1}}}},"mc":{"generated":"2026-10-02T06:35:14.067Z","variants":{"bust1":[{"id":"optimal","label":"Optimal chart","hands":20000000,"mean":-0.010061,"se":0.000271,"exact":-0.009875,"z":-0.69,"win":0.42323,"loss":0.43429,"push":0.14248},{"id":"standAtMin","label":"Stand on 16+ (copy the banker)","hands":20000000,"mean":-0.047346,"se":0.000265,"exact":-0.047202,"z":-0.54,"win":0.422254,"loss":0.446469,"push":0.131277},{"id":"casino17","label":"Casino habit: hit 16, stand 17+","hands":20000000,"mean":-0.031301,"se":0.000265,"exact":-0.031277,"z":-0.09,"win":0.414288,"loss":0.429907,"push":0.155806},{"id":"dragonChaser","label":"Dragon chaser: always hit 4 cards","hands":20000000,"mean":-0.076984,"se":0.000269,"exact":-0.076784,"z":-0.74,"win":0.397285,"loss":0.466544,"push":0.136171}],"bust2":[{"id":"optimal","label":"Optimal chart","hands":20000000,"mean":-0.030247,"se":0.000273,"exact":-0.030566,"z":1.17,"win":0.425557,"loss":0.432614,"push":0.141829},{"id":"standAtMin","label":"Stand on 16+ (copy the banker)","hands":20000000,"mean":-0.053781,"se":0.000267,"exact":-0.053738,"z":-0.16,"win":0.422291,"loss":0.446491,"push":0.131218},{"id":"casino17","label":"Casino habit: hit 16, stand 17+","hands":20000000,"mean":-0.044032,"se":0.000269,"exact":-0.044199,"z":0.62,"win":0.414441,"loss":0.430037,"push":0.155523},{"id":"dragonChaser","label":"Dragon chaser: always hit 4 cards","hands":20000000,"mean":-0.125327,"se":0.000281,"exact":-0.124818,"z":-1.81,"win":0.397278,"loss":0.467895,"push":0.134827}]}}};</script>
+<script>/*
+ * Exact expected values for one hand, by direct enumeration.
+ *
+ * This is a second, independent way to get the numbers in the strategy chart:
+ * instead of the solver's table passes it walks every card you could draw and
+ * every way the banker could play, with exact single-deck card removal. The
+ * page uses it for the "show the math" panel and checks it against the solver.
+ *
+ * Model: you play the published player chart, the banker plays the published
+ * banker chart (it sees only how many cards you hold). Your cards are known,
+ * and so is the fact that the banker's first two cards were not Ban-Ban or
+ * Ban-Luck (those are shown and settled before anyone draws).
+ *
+ * Ranks are 1..10 (1 = Ace, 10 = any ten-value card). Needs BanluckCore.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./core.js'));
+  else root.BanluckExact = factory(root.BanluckCore);
+})(typeof self !== 'undefined' ? self : this, function (C) {
+  'use strict';
+
+  const CNT = [4, 4, 4, 4, 4, 4, 4, 4, 4, 16];
+  const DECK = 52;
+  // Every result a hand can settle for, in units of the bet.
+  const PAYOFFS = [-7, -3, -2, -1, 0, 1, 2, 3, 7];
+  const PI = new Map(PAYOFFS.map((v, i) => [v, i]));
+  // How the banker's hand can finish.
+  const CATS = ['Busts', '16', '17', '18', '19', '20', '21', '五龙', '五龙 21', '777'];
+
+  const pack = (cnt) => { let k = 0; for (let i = 9; i >= 0; i--) k = k * 17 + cnt[i]; return k; };
+  const size = (cnt) => cnt.reduce((a, b) => a + b, 0);
+  const cardsOf = (cnt) => { const a = []; for (let i = 0; i < 10; i++) for (let k = 0; k < cnt[i]; k++) a.push(i + 1); return a; };
+  const fromRanks = (ranks) => { const c = new Array(10).fill(0); for (const r of ranks) c[r - 1]++; return c; };
+  const plus = (cnt, r) => { const c = cnt.slice(); c[r]++; return c; };
+  const choose2 = (a) => a * (a - 1) / 2;
+
+  function create(rules, playerChart, bankerChart) {
+    const evalMemo = new Map();
+    const evalCnt = (cnt) => {
+      const k = pack(cnt);
+      let e = evalMemo.get(k);
+      if (!e) { e = C.evaluate(cardsOf(cnt), rules); e.key = e.n + '|' + e.total + '|' + (e.soft ? 's' : 'h'); evalMemo.set(k, e); }
+      return e;
+    };
+    const catOf = (e) => (e.bust ? 0 : e.tier === C.TIER.TRIPLE7 ? 9 : e.tier === C.TIER.DRAGON21 ? 8 : e.tier === C.TIER.DRAGON ? 7 : e.total - 15);
+    // A stand-in banker hand for each category, used to settle against yours.
+    const catEval = CATS.map((_, i) => (i === 0 ? { bust: true, tier: C.TIER.BUST, mult: 1 }
+      : i <= 6 ? { bust: false, tier: C.TIER.REGULAR, total: i + 15, mult: 1 }
+        : i === 7 ? { bust: false, tier: C.TIER.DRAGON, mult: rules.pay.dragon }
+          : i === 8 ? { bust: false, tier: C.TIER.DRAGON21, mult: rules.pay.dragon21 }
+            : { bust: false, tier: C.TIER.TRIPLE7, mult: rules.pay.triple7 }));
+
+    // Banker's finishing distribution, given your cards and his current cards.
+    const bankMemo = new Map();
+    function bankerDist(pCnt, pk, np, dCnt) {
+      let m = bankMemo.get(pk);
+      if (!m) { m = new Map(); bankMemo.set(pk, m); }
+      const dk = pack(dCnt);
+      const hit = m.get(dk);
+      if (hit) return hit;
+      const e = evalCnt(dCnt), out = new Float64Array(CATS.length);
+      if (e.terminal) out[catOf(e)] = 1;
+      else {
+        const q = e.total < rules.dealerMinStand ? 1 : ((bankerChart[np] || {})[e.key] || 0);
+        if (q < 1) out[catOf(e)] += 1 - q;
+        if (q > 0) {
+          const rem = DECK - np - size(dCnt);
+          for (let r = 0; r < 10; r++) {
+            const avail = CNT[r] - pCnt[r] - dCnt[r];
+            if (avail <= 0) continue;
+            const sub = bankerDist(pCnt, pk, np, plus(dCnt, r)), w = q * avail / rem;
+            for (let i = 0; i < out.length; i++) out[i] += w * sub[i];
+          }
+        }
+      }
+      m.set(dk, out);
+      return out;
+    }
+
+    // You stand on pCnt: how the banker finishes, and the chance he had no 2-card special.
+    const standMemo = new Map();
+    function standCats(pCnt) {
+      const pk = pack(pCnt);
+      const hit = standMemo.get(pk);
+      if (hit) return hit;
+      const np = size(pCnt), rem = DECK - np, cats = new Float64Array(CATS.length);
+      let ok = 0;
+      for (let a = 0; a < 10; a++) for (let b = a; b < 10; b++) {
+        const xa = CNT[a] - pCnt[a], xb = CNT[b] - pCnt[b];
+        const ways = a === b ? choose2(xa) : xa * xb;
+        if (ways <= 0) continue;
+        if (a === 0 && (b === 0 || b === 9)) continue; // Ban-Ban / Ban-Luck would already be settled
+        const d = new Array(10).fill(0); d[a]++; d[b]++;
+        const sub = bankerDist(pCnt, pk, np, d);
+        for (let i = 0; i < cats.length; i++) cats[i] += ways * sub[i];
+        ok += ways;
+      }
+      for (let i = 0; i < cats.length; i++) cats[i] /= ok;
+      const res = { cats, ns: ok / choose2(rem) };
+      standMemo.set(pk, res);
+      return res;
+    }
+    function standPayoff(pCnt) {
+      const pe = evalCnt(pCnt), { cats } = standCats(pCnt), dist = new Float64Array(PAYOFFS.length);
+      for (let i = 0; i < cats.length; i++) if (cats[i] > 0) dist[PI.get(C.settle(pe, catEval[i], rules))] += cats[i];
+      return dist;
+    }
+
+    // Chance of each next card, given your cards and that the banker has no special.
+    function nextCards(pCnt) {
+      const ns = standCats(pCnt).ns, rem = DECK - size(pCnt), rows = [];
+      for (let r = 0; r < 10; r++) {
+        const left = CNT[r] - pCnt[r];
+        if (left <= 0) continue;
+        const child = plus(pCnt, r);
+        rows.push({ rank: r + 1, left, rem, prob: left / rem * standCats(child).ns / ns, child });
+      }
+      return rows;
+    }
+
+    // What you do with a hand: 1 = hit, 0 = stand.
+    function hitProb(pCnt) {
+      const e = evalCnt(pCnt);
+      if (e.terminal) return 0;
+      if (e.total < rules.playerMinStand) return 1;
+      return playerChart[e.key] || 0;
+    }
+
+    // Payoff distribution from here when you follow the chart.
+    const valMemo = new Map();
+    function value(pCnt) {
+      const k = pack(pCnt);
+      let v = valMemo.get(k);
+      if (v) return v;
+      const h = hitProb(pCnt);
+      v = new Float64Array(PAYOFFS.length);
+      if (h < 1) { const s = standPayoff(pCnt); for (let i = 0; i < v.length; i++) v[i] += (1 - h) * s[i]; }
+      if (h > 0) { const x = hitPayoff(pCnt); for (let i = 0; i < v.length; i++) v[i] += h * x[i]; }
+      valMemo.set(k, v);
+      return v;
+    }
+    function hitPayoff(pCnt) {
+      const dist = new Float64Array(PAYOFFS.length);
+      for (const row of nextCards(pCnt)) {
+        const sub = value(row.child);
+        for (let i = 0; i < dist.length; i++) dist[i] += row.prob * sub[i];
+      }
+      return dist;
+    }
+
+    const ev = (dist) => dist.reduce((a, p, i) => a + p * PAYOFFS[i], 0);
+
+    return {
+      evalCnt, standCats, standPayoff, hitPayoff, nextCards, hitProb, value, ev,
+      /** Everything the panel shows for one hand. */
+      explain(pCnt) {
+        const pe = evalCnt(pCnt), st = standPayoff(pCnt);
+        // what each way the banker can finish is worth to you
+        const catPay = catEval.map((d) => C.settle(pe, d, rules));
+        const stand = { cats: standCats(pCnt).cats, catPay, payoff: st, ev: ev(st) };
+        if (pe.terminal) return { eval: pe, stand, hit: null };
+        const hi = hitPayoff(pCnt);
+        const rows = nextCards(pCnt).map((r) => {
+          const e = evalCnt(r.child), sub = value(r.child);
+          return Object.assign(r, { eval: e, hits: hitProb(r.child), ev: ev(sub) });
+        });
+        return { eval: pe, stand, hit: { rows, payoff: hi, ev: ev(hi) } };
+      },
+    };
+  }
+
+  return { create, fromRanks, cardsOf, PAYOFFS, CATS, CNT };
+});
+
+window.EXACT_SRC = "/*\n * Exact expected values for one hand, by direct enumeration.\n *\n * This is a second, independent way to get the numbers in the strategy chart:\n * instead of the solver's table passes it walks every card you could draw and\n * every way the banker could play, with exact single-deck card removal. The\n * page uses it for the \"show the math\" panel and checks it against the solver.\n *\n * Model: you play the published player chart, the banker plays the published\n * banker chart (it sees only how many cards you hold). Your cards are known,\n * and so is the fact that the banker's first two cards were not Ban-Ban or\n * Ban-Luck (those are shown and settled before anyone draws).\n *\n * Ranks are 1..10 (1 = Ace, 10 = any ten-value card). Needs BanluckCore.\n */\n(function (root, factory) {\n  if (typeof module === 'object' && module.exports) module.exports = factory(require('./core.js'));\n  else root.BanluckExact = factory(root.BanluckCore);\n})(typeof self !== 'undefined' ? self : this, function (C) {\n  'use strict';\n\n  const CNT = [4, 4, 4, 4, 4, 4, 4, 4, 4, 16];\n  const DECK = 52;\n  // Every result a hand can settle for, in units of the bet.\n  const PAYOFFS = [-7, -3, -2, -1, 0, 1, 2, 3, 7];\n  const PI = new Map(PAYOFFS.map((v, i) => [v, i]));\n  // How the banker's hand can finish.\n  const CATS = ['Busts', '16', '17', '18', '19', '20', '21', '五龙', '五龙 21', '777'];\n\n  const pack = (cnt) => { let k = 0; for (let i = 9; i >= 0; i--) k = k * 17 + cnt[i]; return k; };\n  const size = (cnt) => cnt.reduce((a, b) => a + b, 0);\n  const cardsOf = (cnt) => { const a = []; for (let i = 0; i < 10; i++) for (let k = 0; k < cnt[i]; k++) a.push(i + 1); return a; };\n  const fromRanks = (ranks) => { const c = new Array(10).fill(0); for (const r of ranks) c[r - 1]++; return c; };\n  const plus = (cnt, r) => { const c = cnt.slice(); c[r]++; return c; };\n  const choose2 = (a) => a * (a - 1) / 2;\n\n  function create(rules, playerChart, bankerChart) {\n    const evalMemo = new Map();\n    const evalCnt = (cnt) => {\n      const k = pack(cnt);\n      let e = evalMemo.get(k);\n      if (!e) { e = C.evaluate(cardsOf(cnt), rules); e.key = e.n + '|' + e.total + '|' + (e.soft ? 's' : 'h'); evalMemo.set(k, e); }\n      return e;\n    };\n    const catOf = (e) => (e.bust ? 0 : e.tier === C.TIER.TRIPLE7 ? 9 : e.tier === C.TIER.DRAGON21 ? 8 : e.tier === C.TIER.DRAGON ? 7 : e.total - 15);\n    // A stand-in banker hand for each category, used to settle against yours.\n    const catEval = CATS.map((_, i) => (i === 0 ? { bust: true, tier: C.TIER.BUST, mult: 1 }\n      : i <= 6 ? { bust: false, tier: C.TIER.REGULAR, total: i + 15, mult: 1 }\n        : i === 7 ? { bust: false, tier: C.TIER.DRAGON, mult: rules.pay.dragon }\n          : i === 8 ? { bust: false, tier: C.TIER.DRAGON21, mult: rules.pay.dragon21 }\n            : { bust: false, tier: C.TIER.TRIPLE7, mult: rules.pay.triple7 }));\n\n    // Banker's finishing distribution, given your cards and his current cards.\n    const bankMemo = new Map();\n    function bankerDist(pCnt, pk, np, dCnt) {\n      let m = bankMemo.get(pk);\n      if (!m) { m = new Map(); bankMemo.set(pk, m); }\n      const dk = pack(dCnt);\n      const hit = m.get(dk);\n      if (hit) return hit;\n      const e = evalCnt(dCnt), out = new Float64Array(CATS.length);\n      if (e.terminal) out[catOf(e)] = 1;\n      else {\n        const q = e.total < rules.dealerMinStand ? 1 : ((bankerChart[np] || {})[e.key] || 0);\n        if (q < 1) out[catOf(e)] += 1 - q;\n        if (q > 0) {\n          const rem = DECK - np - size(dCnt);\n          for (let r = 0; r < 10; r++) {\n            const avail = CNT[r] - pCnt[r] - dCnt[r];\n            if (avail <= 0) continue;\n            const sub = bankerDist(pCnt, pk, np, plus(dCnt, r)), w = q * avail / rem;\n            for (let i = 0; i < out.length; i++) out[i] += w * sub[i];\n          }\n        }\n      }\n      m.set(dk, out);\n      return out;\n    }\n\n    // You stand on pCnt: how the banker finishes, and the chance he had no 2-card special.\n    const standMemo = new Map();\n    function standCats(pCnt) {\n      const pk = pack(pCnt);\n      const hit = standMemo.get(pk);\n      if (hit) return hit;\n      const np = size(pCnt), rem = DECK - np, cats = new Float64Array(CATS.length);\n      let ok = 0;\n      for (let a = 0; a < 10; a++) for (let b = a; b < 10; b++) {\n        const xa = CNT[a] - pCnt[a], xb = CNT[b] - pCnt[b];\n        const ways = a === b ? choose2(xa) : xa * xb;\n        if (ways <= 0) continue;\n        if (a === 0 && (b === 0 || b === 9)) continue; // Ban-Ban / Ban-Luck would already be settled\n        const d = new Array(10).fill(0); d[a]++; d[b]++;\n        const sub = bankerDist(pCnt, pk, np, d);\n        for (let i = 0; i < cats.length; i++) cats[i] += ways * sub[i];\n        ok += ways;\n      }\n      for (let i = 0; i < cats.length; i++) cats[i] /= ok;\n      const res = { cats, ns: ok / choose2(rem) };\n      standMemo.set(pk, res);\n      return res;\n    }\n    function standPayoff(pCnt) {\n      const pe = evalCnt(pCnt), { cats } = standCats(pCnt), dist = new Float64Array(PAYOFFS.length);\n      for (let i = 0; i < cats.length; i++) if (cats[i] > 0) dist[PI.get(C.settle(pe, catEval[i], rules))] += cats[i];\n      return dist;\n    }\n\n    // Chance of each next card, given your cards and that the banker has no special.\n    function nextCards(pCnt) {\n      const ns = standCats(pCnt).ns, rem = DECK - size(pCnt), rows = [];\n      for (let r = 0; r < 10; r++) {\n        const left = CNT[r] - pCnt[r];\n        if (left <= 0) continue;\n        const child = plus(pCnt, r);\n        rows.push({ rank: r + 1, left, rem, prob: left / rem * standCats(child).ns / ns, child });\n      }\n      return rows;\n    }\n\n    // What you do with a hand: 1 = hit, 0 = stand.\n    function hitProb(pCnt) {\n      const e = evalCnt(pCnt);\n      if (e.terminal) return 0;\n      if (e.total < rules.playerMinStand) return 1;\n      return playerChart[e.key] || 0;\n    }\n\n    // Payoff distribution from here when you follow the chart.\n    const valMemo = new Map();\n    function value(pCnt) {\n      const k = pack(pCnt);\n      let v = valMemo.get(k);\n      if (v) return v;\n      const h = hitProb(pCnt);\n      v = new Float64Array(PAYOFFS.length);\n      if (h < 1) { const s = standPayoff(pCnt); for (let i = 0; i < v.length; i++) v[i] += (1 - h) * s[i]; }\n      if (h > 0) { const x = hitPayoff(pCnt); for (let i = 0; i < v.length; i++) v[i] += h * x[i]; }\n      valMemo.set(k, v);\n      return v;\n    }\n    function hitPayoff(pCnt) {\n      const dist = new Float64Array(PAYOFFS.length);\n      for (const row of nextCards(pCnt)) {\n        const sub = value(row.child);\n        for (let i = 0; i < dist.length; i++) dist[i] += row.prob * sub[i];\n      }\n      return dist;\n    }\n\n    const ev = (dist) => dist.reduce((a, p, i) => a + p * PAYOFFS[i], 0);\n\n    return {\n      evalCnt, standCats, standPayoff, hitPayoff, nextCards, hitProb, value, ev,\n      /** Everything the panel shows for one hand. */\n      explain(pCnt) {\n        const pe = evalCnt(pCnt), st = standPayoff(pCnt);\n        // what each way the banker can finish is worth to you\n        const catPay = catEval.map((d) => C.settle(pe, d, rules));\n        const stand = { cats: standCats(pCnt).cats, catPay, payoff: st, ev: ev(st) };\n        if (pe.terminal) return { eval: pe, stand, hit: null };\n        const hi = hitPayoff(pCnt);\n        const rows = nextCards(pCnt).map((r) => {\n          const e = evalCnt(r.child), sub = value(r.child);\n          return Object.assign(r, { eval: e, hits: hitProb(r.child), ev: ev(sub) });\n        });\n        return { eval: pe, stand, hit: { rows, payoff: hi, ev: ev(hi) } };\n      },\n    };\n  }\n\n  return { create, fromRanks, cardsOf, PAYOFFS, CATS, CNT };\n});\n";</script>
+<script>window.BL_DATA = {"generated":"2026-10-02T04:53:56.758Z","compositions":2983,"variants":{"bust1":{"rules":{"decks":1,"playerMinStand":16,"dealerMinStand":16,"maxCards":5,"bothBustPush":true,"fiveCardBustMult":1,"pay":{"banBan":3,"banLuck":2,"triple7":7,"dragon":2,"dragon21":3}},"value":-0.010389,"exploitability":0.00001801043706792932,"chart":{"2|20|h":{"hit":0,"standEV":0.518976,"hitEV":-0.62144,"margin":-1.140416},"2|19|h":{"hit":0,"standEV":0.195223,"hitEV":-0.516354,"margin":-0.711577},"2|18|h":{"hit":0,"standEV":-0.077926,"hitEV":-0.437166,"margin":-0.35924},"2|17|h":{"hit":0,"standEV":-0.277315,"hitEV":-0.379305,"margin":-0.10199},"2|16|h":{"hit":0.2306,"standEV":-0.339804,"hitEV":-0.343453,"margin":-0.003649},"2|20|s":{"hit":0,"standEV":0.546014,"hitEV":0.206487,"margin":-0.339527},"2|19|s":{"hit":0,"standEV":0.212712,"hitEV":0.14451,"margin":-0.068202},"2|18|s":{"hit":0.9999,"standEV":-0.054739,"hitEV":0.113062,"margin":0.167801},"2|17|s":{"hit":0.9999,"standEV":-0.248695,"hitEV":0.104661,"margin":0.353356},"2|16|s":{"hit":1,"standEV":-0.309041,"hitEV":0.153826,"margin":0.462867},"3|21|h":{"hit":0,"standEV":0.799787,"hitEV":-0.801797,"margin":-1.601584},"3|20|h":{"hit":0,"standEV":0.547866,"hitEV":-0.665587,"margin":-1.213453},"3|19|h":{"hit":0,"standEV":0.236877,"hitEV":-0.55877,"margin":-0.795647},"3|18|h":{"hit":0,"standEV":-0.024846,"hitEV":-0.482038,"margin":-0.457193},"3|17|h":{"hit":0,"standEV":-0.273657,"hitEV":-0.426074,"margin":-0.152416},"3|16|h":{"hit":0.9997,"standEV":-0.405449,"hitEV":-0.365951,"margin":0.039498},"3|21|s":{"hit":0,"standEV":0.835093,"hitEV":0.049592,"margin":-0.785501},"3|20|s":{"hit":0.9928,"standEV":0.57954,"hitEV":0.597435,"margin":0.017895},"3|19|s":{"hit":1,"standEV":0.263641,"hitEV":0.631986,"margin":0.368344},"3|18|s":{"hit":1,"standEV":0.000192,"hitEV":0.654117,"margin":0.653924},"3|17|s":{"hit":1,"standEV":-0.253861,"hitEV":0.711037,"margin":0.964898},"3|16|s":{"hit":1,"standEV":-0.388844,"hitEV":0.835803,"margin":1.224647},"4|21|h":{"hit":0,"standEV":0.837319,"hitEV":-0.797196,"margin":-1.634515},"4|20|h":{"hit":0,"standEV":0.597307,"hitEV":-0.509644,"margin":-1.106951},"4|19|h":{"hit":0,"standEV":0.295208,"hitEV":-0.318448,"margin":-0.613657},"4|18|h":{"hit":0,"standEV":0.046813,"hitEV":-0.138584,"margin":-0.185398},"4|17|h":{"hit":1,"standEV":-0.190591,"hitEV":0.053862,"margin":0.244453},"4|16|h":{"hit":1,"standEV":-0.428445,"hitEV":0.261299,"margin":0.689744}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":1,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"hands":{"2|20|h":[["10 10",1,0.518976,-0.62144]],"2|19|h":[["9 10",1,0.195223,-0.516354]],"2|18|h":[["8 10",0.914556,-0.079064,-0.437152],["9 9",0.085444,-0.065748,-0.437319]],"2|17|h":[["7 10",0.800553,-0.280321,-0.379051],["8 9",0.199447,-0.265248,-0.380324]],"2|16|h":[["6 10",0.744844,-0.340812,-0.343734],["7 9",0.185568,-0.33992,-0.342297],["8 8",0.069588,-0.328702,-0.343523]],"2|20|s":[["1 9",1,0.546014,0.206487]],"2|19|s":[["1 8",1,0.212712,0.14451]],"2|18|s":[["1 7",1,-0.054739,0.113062]],"2|17|s":[["1 6",1,-0.248695,0.104661]],"2|16|s":[["1 5",1,-0.309041,0.153826]],"3|21|h":[["5 6 10",0.192352,0.798573,-0.802142],["4 7 10",0.192352,0.799312,-0.801783],["3 8 10",0.192352,0.799483,-0.804],["2 9 10",0.192352,0.804303,-0.803756],["6 7 8",0.071872,0.796842,-0.793079],["5 7 9",0.047915,0.798612,-0.800879],["4 8 9",0.047915,0.797437,-0.802033],["6 6 9",0.026952,0.798108,-0.793194],["5 8 8",0.017968,0.795863,-0.802217],["3 9 9",0.017968,0.8005,-0.802973],["1 10 10",0,0.805945,-0.800921]],"3|20|h":[["4 6 10",0.189571,0.552118,-0.665109],["3 7 10",0.189571,0.549462,-0.665449],["2 8 10",0.189571,0.550038,-0.666245],["5 5 10",0.106634,0.553332,-0.672038],["5 7 8",0.070833,0.541161,-0.663765],["5 6 9",0.070833,0.543937,-0.664501],["4 7 9",0.047222,0.540672,-0.664381],["3 8 9",0.047222,0.537407,-0.666343],["6 7 7",0.026562,0.543862,-0.656186],["6 6 8",0.026562,0.543786,-0.657243],["4 8 8",0.017708,0.536988,-0.665198],["2 9 9",0.017708,0.54179,-0.666233],["1 9 10",0,0.555826,-0.697095]],"3|19|h":[["4 5 10",0.266292,0.245225,-0.555827],["3 6 10",0.177528,0.242682,-0.550175],["2 7 10",0.177528,0.239477,-0.582376],["5 6 8",0.066333,0.223782,-0.550127],["4 7 8",0.066333,0.21874,-0.549601],["4 6 9",0.066333,0.237509,-0.549539],["3 7 9",0.044222,0.229776,-0.550108],["2 8 9",0.044222,0.227658,-0.584602],["6 6 7",0.024875,0.228905,-0.541676],["5 7 7",0.024875,0.222358,-0.548393],["5 5 9",0.024875,0.237231,-0.556471],["3 8 8",0.016583,0.211987,-0.552427],["1 9 9",0,0.250155,-0.576534],["1 8 10",0,0.245961,-0.576389]],"3|18|h":[["3 5 10",0.24651,-0.020848,-0.498289],["2 6 10",0.16434,-0.022002,-0.486878],["4 4 10",0.092441,-0.019378,-0.46434],["1 7 10",0.083502,-0.021461,-0.477548],["5 6 7",0.061405,-0.039386,-0.459557],["4 6 8",0.061405,-0.028866,-0.460875],["4 5 9",0.061405,-0.017006,-0.465497],["3 7 8",0.061405,-0.040666,-0.494973],["3 6 9",0.061405,-0.019056,-0.493238],["2 7 9",0.040937,-0.029739,-0.487984],["5 5 8",0.023027,-0.028237,-0.466991],["4 7 7",0.023027,-0.05022,-0.460521],["2 8 8",0.015351,-0.030648,-0.490674],["6 6 6",0.003838,-0.028695,-0.453479],["1 8 9",0,-0.009895,-0.480106]],"3|17|h":[["3 4 10",0.233022,-0.273325,-0.456319],["2 5 10",0.233022,-0.273414,-0.41599],["1 6 10",0.078934,-0.268915,-0.402422],["4 6 7",0.058046,-0.283373,-0.4254],["4 5 8",0.058046,-0.26913,-0.430394],["3 6 8",0.058046,-0.272866,-0.421584],["3 5 9",0.058046,-0.270957,-0.423673],["2 7 8",0.058046,-0.272885,-0.41413],["2 6 9",0.058046,-0.274968,-0.412108],["5 6 6",0.021767,-0.283543,-0.392566],["5 5 7",0.021767,-0.279422,-0.3968],["4 4 9",0.021767,-0.271437,-0.461329],["3 7 7",0.021767,-0.283636,-0.421594],["1 7 9",0.019681,-0.266976,-0.403533],["1 8 8",0,-0.255215,-0.406351]],"3|16|h":[["2 4 10",0.234821,-0.408254,-0.372918],["1 5 10",0.159086,-0.401351,-0.368341],["3 3 10",0.088058,-0.408215,-0.371548],["4 5 7",0.058494,-0.402941,-0.387729],["3 6 7",0.058494,-0.407036,-0.341993],["3 5 8",0.058494,-0.404376,-0.380574],["3 4 9",0.058494,-0.405896,-0.379278],["2 6 8",0.058494,-0.408625,-0.336483],["2 5 9",0.058494,-0.40712,-0.372701],["1 7 8",0.039666,-0.389403,-0.333782],["1 6 9",0.039666,-0.403311,-0.331474],["5 5 6",0.021935,-0.416307,-0.38702],["4 6 6",0.021935,-0.418631,-0.349601],["4 4 8",0.021935,-0.403342,-0.388822],["2 7 7",0.021935,-0.396178,-0.336331]],"3|21|s":[["1 5 6",0.3,0.833892,0.056679],["1 4 7",0.3,0.834176,0.049722],["1 3 8",0.2,0.834516,0.044813],["1 2 9",0.2,0.838845,0.043544],["1 1 10",0,0.840885,0.07783],["1 1 1",0,0.870107,1.592243]],"3|20|s":[["1 4 6",0.328767,0.58076,0.596047],["1 3 7",0.328767,0.577835,0.599681],["1 2 8",0.219178,0.578799,0.596044],["1 5 5",0.123288,0.582152,0.59762],["1 1 9",0,0.584659,0.595671]],"3|19|s":[["1 4 5",0.333333,0.266413,0.625316],["1 3 6",0.333333,0.264057,0.631867],["1 2 7",0.333333,0.260455,0.638776],["1 1 8",0,0.267811,0.62288]],"3|18|s":[["1 3 5",0.380373,0.000337,0.658302],["1 2 6",0.380373,-0.000541,0.647873],["1 4 4",0.14264,0.001588,0.651747],["1 1 7",0.096615,0.000447,0.665711]],"3|17|s":[["1 3 4",0.443656,-0.254504,0.699577],["1 2 5",0.443656,-0.254431,0.717257],["1 1 6",0.112689,-0.249086,0.73166]],"3|16|s":[["1 2 4",0.613874,-0.390108,0.825158],["1 3 3",0.230203,-0.389928,0.83833],["1 1 5",0.155924,-0.382264,0.873979]],"4|21|h":[["2 4 5 10",0.097512,0.837646,-0.804899],["2 3 6 10",0.097512,0.840176,-0.797511],["1 4 6 10",0.082638,0.837491,-0.793268],["1 3 7 10",0.082638,0.840356,-0.793545],["1 2 8 10",0.06611,0.842581,-0.795253],["1 5 5 10",0.043385,0.834534,-0.801006],["3 3 5 10",0.036567,0.836079,-0.805938],["2 2 7 10",0.036567,0.844683,-0.796615],["3 5 6 7",0.036429,0.832624,-0.794455],["2 5 6 8",0.036429,0.834493,-0.796245],["1 5 7 8",0.028843,0.835089,-0.791173],["3 4 6 8",0.024286,0.833289,-0.79677],["3 4 5 9",0.024286,0.834103,-0.804529],["2 4 7 8",0.024286,0.837641,-0.795761],["2 4 6 9",0.024286,0.837586,-0.796538],["2 3 7 9",0.024286,0.840425,-0.796596],["3 4 4 10",0.018284,0.836441,-0.805468],["1 5 6 9",0.016482,0.834554,-0.792385],["1 6 7 7",0.013906,0.836436,-0.782178],["4 5 6 6",0.013661,0.82906,-0.79472],["4 5 5 7",0.013661,0.830045,-0.801829],["3 5 5 8",0.013661,0.830335,-0.804734],["2 6 6 7",0.013661,0.837473,-0.785669],["2 5 7 7",0.013661,0.837061,-0.793669],["2 5 5 9",0.013661,0.834686,-0.804621],["1 6 6 8",0.010816,0.834811,-0.783941],["4 4 6 7",0.009107,0.832317,-0.794532],["4 4 5 8",0.009107,0.831226,-0.803526],["3 4 7 7",0.009107,0.834571,-0.795443],["3 3 7 8",0.009107,0.835565,-0.79743],["3 3 6 9",0.009107,0.836817,-0.797043],["2 3 8 8",0.009107,0.837225,-0.799101],["2 2 8 9",0.009107,0.841595,-0.79905],["1 4 7 9",0.008241,0.837686,-0.792199],["1 3 8 9",0.008241,0.838323,-0.794958],["1 4 8 8",0.006181,0.83589,-0.793361],["5 5 5 6",0.003036,0.825408,-0.803307],["3 6 6 6",0.002277,0.832967,-0.786528],["4 4 4 9",0.000759,0.834183,-0.804054],["1 2 9 9",0,0.842261,-0.795401],["1 1 9 10",0,0.844512,-0.791637]],"4|20|h":[["1 4 5 10",0.113682,0.602243,-0.559587],["2 3 5 10",0.095818,0.601461,-0.48353],["1 3 6 10",0.081202,0.605947,-0.553351],["1 2 7 10",0.081202,0.609796,-0.552416],["2 4 4 10",0.053898,0.6002,-0.483508],["3 3 4 10",0.035932,0.598948,-0.484443],["2 2 6 10",0.035932,0.606645,-0.476428],["3 4 6 7",0.035796,0.588972,-0.474024],["3 4 5 8",0.035796,0.585643,-0.483082],["2 5 6 7",0.035796,0.592736,-0.473022],["2 4 6 8",0.035796,0.590776,-0.475202],["2 4 5 9",0.035796,0.590486,-0.482872],["1 4 6 9",0.028342,0.594619,-0.551236],["2 3 7 8",0.023864,0.59152,-0.475208],["2 3 6 9",0.023864,0.593896,-0.47563],["1 3 7 9",0.020244,0.597121,-0.551893],["4 5 5 6",0.017898,0.582745,-0.481709],["4 4 5 7",0.017898,0.585004,-0.480898],["1 5 6 8",0.016195,0.592561,-0.551329],["1 4 7 8",0.016195,0.593185,-0.550615],["1 6 6 7",0.013665,0.5976,-0.541562],["1 5 7 7",0.013665,0.595723,-0.549029],["3 5 6 6",0.013424,0.587421,-0.474568],["3 5 5 7",0.013424,0.587692,-0.480776],["3 4 4 9",0.013424,0.588951,-0.482941],["2 5 5 8",0.013424,0.588468,-0.482479],["2 4 7 7",0.013424,0.591832,-0.473817],["1 5 5 9",0.010628,0.592287,-0.559002],["3 3 6 8",0.008949,0.587809,-0.47686],["3 3 5 9",0.008949,0.590334,-0.483403],["2 2 7 9",0.008949,0.596631,-0.475593],["1 2 8 9",0.008098,0.597191,-0.554037],["4 4 6 6",0.006712,0.586783,-0.473885],["3 3 7 7",0.003356,0.590935,-0.47464],["2 2 8 8",0.003356,0.592589,-0.477386],["4 4 4 8",0.002983,0.585217,-0.482153],["2 6 6 6",0.002237,0.595078,-0.466002],["5 5 5 5",0.000186,0.579845,-0.489181],["1 3 8 8",0,0.592044,-0.554292],["1 1 9 9",0,0.603002,-0.630032],["1 1 8 10",0,0.612162,-0.630509]],"4|19|h":[["2 3 4 10",0.143652,0.301068,-0.333723],["1 3 5 10",0.113623,0.31041,-0.309962],["1 2 6 10",0.081159,0.31409,-0.381708],["3 4 5 7",0.047703,0.277917,-0.253552],["1 4 4 10",0.042609,0.309463,-0.309148],["2 2 5 10",0.035913,0.305661,-0.411969],["2 4 6 7",0.035778,0.281521,-0.324773],["2 4 5 8",0.035778,0.280322,-0.333089],["2 3 6 8",0.035778,0.278458,-0.326914],["2 3 5 9",0.035778,0.293808,-0.333386],["1 4 6 8",0.028327,0.288369,-0.301799],["1 4 5 9",0.028327,0.301513,-0.308647],["1 3 6 9",0.028327,0.301386,-0.302569],["1 5 6 7",0.02428,0.291682,-0.300088],["1 3 7 8",0.020233,0.286437,-0.302297],["4 4 5 6",0.017889,0.276815,-0.254122],["3 5 5 6",0.017889,0.277419,-0.254625],["3 4 6 6",0.017889,0.278172,-0.247516],["3 4 4 8",0.017889,0.276542,-0.255307],["3 3 6 7",0.017889,0.277517,-0.247278],["3 3 5 8",0.017889,0.275774,-0.256119],["3 3 4 9",0.017889,0.291119,-0.25531],["2 5 6 6",0.013417,0.282802,-0.325446],["2 5 5 7",0.013417,0.283283,-0.331],["2 4 4 9",0.013417,0.293409,-0.3334],["2 3 7 7",0.013417,0.279403,-0.324829],["1 1 7 10",0.012365,0.322984,-0.356844],["1 2 7 9",0.01214,0.303699,-0.380762],["3 3 3 10",0.011971,0.297654,-0.256379],["1 5 5 8",0.010623,0.28912,-0.308696],["2 2 7 8",0.008944,0.281221,-0.404085],["2 2 6 9",0.008944,0.296084,-0.405094],["1 2 8 8",0.00607,0.288108,-0.382494],["1 4 7 7",0.004553,0.288326,-0.300606],["4 5 5 5",0.002981,0.275884,-0.260797],["4 4 4 7",0.002981,0.27631,-0.253896],["1 6 6 6",0.002276,0.292836,-0.293724],["1 1 8 9",0,0.310707,-0.358126]],"4|18|h":[["1 3 4 10",0.114856,0.060296,-0.158456],["1 2 5 10",0.114856,0.062893,-0.136616],["2 3 3 10",0.072605,0.047963,-0.239302],["2 2 4 10",0.072605,0.051198,-0.138722],["3 4 5 6",0.048221,0.029402,-0.10366],["2 4 5 7",0.048221,0.029819,-0.080191],["2 3 6 7",0.048221,0.02495,-0.152548],["2 3 5 8",0.048221,0.040398,-0.160825],["2 3 4 9",0.048221,0.052382,-0.160519],["1 4 5 8",0.028634,0.052399,-0.078977],["1 3 5 9",0.028634,0.063196,-0.158253],["1 2 7 8",0.028634,0.045952,-0.129453],["1 4 6 7",0.024544,0.037891,-0.071616],["1 3 6 8",0.020453,0.04729,-0.152453],["1 2 6 9",0.020453,0.060545,-0.130349],["3 4 4 7",0.018083,0.02719,-0.103095],["3 3 5 7",0.018083,0.027394,-0.181509],["3 3 4 8",0.018083,0.039402,-0.183576],["2 5 5 6",0.018083,0.032489,-0.08138],["2 4 6 6",0.018083,0.029866,-0.074862],["2 4 4 8",0.018083,0.042315,-0.081763],["2 2 6 8",0.018083,0.038347,-0.132484],["2 2 5 9",0.018083,0.053627,-0.138965],["1 5 5 7",0.013806,0.042791,-0.077389],["1 3 7 7",0.013806,0.033252,-0.150619],["1 1 6 10",0.0125,0.071438,-0.128328],["1 4 4 9",0.010738,0.063145,-0.078892],["4 4 5 5",0.006781,0.0313,-0.030658],["3 3 6 6",0.006781,0.026395,-0.17598],["2 2 7 7",0.006781,0.022406,-0.130437],["1 5 6 6",0.004602,0.041372,-0.072541],["1 1 7 9",0.003119,0.069845,-0.127271],["4 4 4 6",0.003014,0.029962,-0.024758],["3 5 5 5",0.003014,0.032207,-0.109922],["3 3 3 9",0.003014,0.051658,-0.261658],["1 1 8 8",0,0.068263,-0.128947]],"4|17|h":[["1 2 4 10",0.166835,-0.1831,0.014847],["2 2 3 10",0.073824,-0.192839,0.034657],["1 3 3 10",0.062563,-0.182048,0.03546],["1 3 6 7",0.049911,-0.197169,0.099837],["2 4 5 6",0.049031,-0.210058,0.069572],["2 3 5 7",0.049031,-0.200144,0.092503],["2 3 4 8",0.049031,-0.187965,0.011904],["1 3 4 9",0.041593,-0.180579,0.014591],["1 2 6 8",0.041593,-0.186553,0.098573],["1 1 5 10",0.038129,-0.172007,0.095535],["1 4 5 7",0.037434,-0.190408,0.073101],["1 3 5 8",0.033274,-0.178578,0.092509],["1 2 5 9",0.033274,-0.180979,0.093117],["1 4 6 6",0.018717,-0.206,0.077817],["1 2 7 7",0.018717,-0.190299,0.100429],["3 4 5 5",0.018387,-0.204195,0.063192],["3 4 4 6",0.018387,-0.210934,-0.009741],["3 3 5 6",0.018387,-0.209568,0.090222],["3 3 4 7",0.018387,-0.200124,0.012457],["2 4 4 7",0.018387,-0.20174,-0.008327],["2 3 6 6",0.018387,-0.21647,0.09712],["2 3 3 9",0.018387,-0.188907,0.033925],["2 2 6 7",0.018387,-0.20862,0.098539],["2 2 5 8",0.018387,-0.188252,0.091068],["2 2 4 9",0.018387,-0.190827,0.012382],["1 4 4 8",0.015597,-0.179477,-0.006641],["1 1 7 8",0.009515,-0.167953,0.101819],["1 1 6 9",0.009515,-0.178059,0.101103],["1 5 5 6",0.009358,-0.198731,0.150299],["4 4 4 5",0.003064,-0.206592,-0.037062],["3 3 3 8",0.003064,-0.186471,0.031777],["2 5 5 5",0.003064,-0.202418,0.142682]],"4|16|h":[["1 2 3 10",0.209425,-0.427709,0.266209],["1 3 5 7",0.062653,-0.420858,0.245065],["1 2 6 7",0.062653,-0.418517,0.329084],["2 3 5 6",0.061548,-0.441449,0.242188],["2 3 4 7",0.061548,-0.43056,0.264767],["1 2 5 8",0.052211,-0.423041,0.244077],["1 1 4 10",0.047862,-0.418876,0.268597],["1 4 5 6",0.04699,-0.431426,0.24432],["1 3 4 8",0.041769,-0.423063,0.265227],["1 2 4 9",0.041769,-0.425106,0.266032],["1 3 6 6",0.023495,-0.428196,0.327521],["3 4 4 5",0.02308,-0.445694,0.179123],["3 3 4 6",0.02308,-0.441435,0.262909],["2 4 5 5",0.02308,-0.444676,0.158256],["2 4 4 6",0.02308,-0.440328,0.263832],["2 3 3 8",0.02308,-0.431725,0.26297],["2 2 5 7",0.02308,-0.430396,0.244093],["2 2 4 8",0.02308,-0.430497,0.263911],["2 2 3 9",0.02308,-0.433826,0.264311],["1 3 3 9",0.019579,-0.424264,0.265357],["2 2 2 10",0.015445,-0.435978,0.265239],["1 1 6 8",0.011944,-0.411453,0.329554],["1 1 5 9",0.011944,-0.416268,0.246488],["1 4 4 7",0.011747,-0.421865,0.266935],["3 3 5 5",0.008655,-0.445022,0.157133],["2 2 6 6",0.008655,-0.437436,0.326529],["1 1 7 7",0.007465,-0.400227,0.331182],["1 5 5 5",0.003916,-0.434577,0.138508],["3 3 3 7",0.003847,-0.429599,0.263625],["4 4 4 4",0.00024,-0.445836,0.200843]]},"why":{"2|16|h":{"stand":-0.339804,"hit":-0.343453,"bankerBust":0.353702,"banker16":0,"bust":0.599651,"safe":20,"standPay":[0.000186,0.006773,0.032547,0.606793,0,0.353702,0,0,0],"hitPay":[0.000186,0.006799,0.03361,0.489125,0.23569,0.23459,0,0,0]},"3|16|h":{"stand":-0.405449,"hit":-0.365951,"bankerBust":0.310399,"banker16":0.012521,"bust":0.627339,"safe":18.240208,"standPay":[0.000197,0.005649,0.026283,0.644952,0.012521,0.310399,0,0,0],"hitPay":[0.000197,0.005392,0.025263,0.546337,0.201854,0.199182,0.016038,0.005737,0]},"4|16|h":{"stand":-0.428445,"hit":0.261299,"bankerBust":0.24009,"banker16":0.120724,"bust":0.644277,"safe":17.055241,"standPay":[0.0002,0.004472,0.019203,0.615311,0.120724,0.24009,0,0,0],"hitPay":[0.0002,0.003742,0.012471,0.477175,0.156106,0,0.274875,0.075431,0]},"2|17|h":{"stand":-0.277314,"hit":-0.379305,"bankerBust":0.352633,"banker16":0,"bust":0.67946,"safe":16,"standPay":[0.000086,0.006959,0.033352,0.541764,0.065206,0.352633,0,0,0],"hitPay":[0.000086,0.006995,0.034469,0.497079,0.253073,0.208299,0,0,0]},"3|17|h":{"stand":-0.273658,"hit":-0.426074,"bankerBust":0.309586,"banker16":0.012516,"bust":0.69758,"safe":14.78879,"standPay":[0.000198,0.005808,0.02747,0.522011,0.122414,0.322102,0,0,0],"hitPay":[0.000198,0.005598,0.026859,0.557709,0.20611,0.20353,0,0,0]},"4|17|h":{"stand":-0.190591,"hit":0.053862,"bankerBust":0.240119,"banker16":0.120834,"bust":0.718061,"safe":13.504972,"standPay":[0.000202,0.004604,0.02013,0.496056,0.118059,0.360953,0,0,0],"hitPay":[0.000202,0.003879,0.014391,0.531645,0.172114,0,0.205972,0.0718,0]}},"bankerChart":{"2":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0.7248,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0.1633,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0.1299,"4|17|h":1,"4|16|h":1},"3":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0.9989,"2|20|s":0,"2|19|s":0,"2|18|s":0.9998,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0.7518,"3|21|s":0,"3|20|s":0.9995,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"4":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9996,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"5":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0.9997,"2|16|s":0.9999,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":1,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0.6368,"4|16|h":1}},"bankerEV":{"2":{"2|20|h":[0.7133,-0.9185],"2|19|h":[0.2092,-0.7617],"2|18|h":[-0.1579,-0.6363],"2|17|h":[-0.5203,-0.5299],"2|16|h":[-0.8604,-0.4885],"2|20|s":[0.6734,-0.1101],"2|19|s":[0.1536,-0.0911],"2|18|s":[-0.2,0.0303],"2|17|s":[-0.5426,0.0123],"2|16|s":[-0.844,0.1159],"3|21|h":[1,-1],"3|20|h":[0.6768,-0.8343],"3|19|h":[0.1689,-0.7031],"3|18|h":[-0.1784,-0.6147],"3|17|h":[-0.5182,-0.5549],"3|16|h":[-0.8489,-0.4869],"3|21|s":[1,-0.071],"3|20|s":[0.6767,0.5792],"3|19|s":[0.1784,0.6132],"3|18|s":[-0.1616,0.6009],"3|17|s":[-0.503,0.655],"3|16|s":[-0.8435,0.8203],"4|21|h":[1,-1],"4|20|h":[0.6797,-0.6899],"4|19|h":[0.1759,-0.4715],"4|18|h":[-0.1702,-0.2654],"4|17|h":[-0.5147,-0.0498],"4|16|h":[-0.8503,0.1877]},"3":{"2|20|h":[0.6045,-0.5863],"2|19|h":[0.381,-0.4667],"2|18|h":[0.1385,-0.3667],"2|17|h":[-0.1181,-0.269],"2|16|h":[-0.2515,-0.2278],"2|20|s":[0.6301,0.0618],"2|19|s":[0.4055,0.1013],"2|18|s":[0.1685,0.2489],"2|17|s":[-0.0894,0.2253],"2|16|s":[-0.228,0.2597],"3|21|h":[0.8613,-0.6247],"3|20|h":[0.6187,-0.495],"3|19|h":[0.3936,-0.3983],"3|18|h":[0.154,-0.3296],"3|17|h":[-0.1013,-0.2797],"3|16|h":[-0.2293,-0.2256],"3|21|s":[0.8667,0.1593],"3|20|s":[0.6287,0.6827],"3|19|s":[0.402,0.713],"3|18|s":[0.1635,0.7473],"3|17|s":[-0.0845,0.7993],"3|16|s":[-0.2071,0.9328],"4|21|h":[0.8636,-0.6104],"4|20|h":[0.6206,-0.3274],"4|19|h":[0.396,-0.1475],"4|18|h":[0.1609,0.0231],"4|17|h":[-0.0832,0.2009],"4|16|h":[-0.2042,0.3909]},"4":{"2|20|h":[0.6443,-0.427],"2|19|h":[0.4016,-0.3318],"2|18|h":[0.1653,-0.249],"2|17|h":[0.0539,-0.1691],"2|16|h":[0.0649,-0.1173],"2|20|s":[0.6508,0.1543],"2|19|s":[0.4223,0.1713],"2|18|s":[0.2011,0.3078],"2|17|s":[0.1,0.3275],"2|16|s":[0.1114,0.392],"3|21|h":[0.8863,-0.4638],"3|20|h":[0.6584,-0.353],"3|19|h":[0.4303,-0.2709],"3|18|h":[0.2037,-0.2114],"3|17|h":[0.0941,-0.1685],"3|16|h":[0.0966,-0.1162],"3|21|s":[0.8881,0.2322],"3|20|s":[0.6637,0.7152],"3|19|s":[0.4429,0.7406],"3|18|s":[0.2283,0.7684],"3|17|s":[0.1261,0.8223],"3|16|s":[0.127,0.9543],"4|21|h":[0.8875,-0.4485],"4|20|h":[0.6632,-0.1954],"4|19|h":[0.4404,-0.0398],"4|18|h":[0.225,0.1162],"4|17|h":[0.1213,0.2767],"4|16|h":[0.1232,0.4577]},"5":{"2|20|h":[-0.5742,-1.0594],"2|19|h":[-0.5714,-1.0207],"2|18|h":[-0.5682,-0.9793],"2|17|h":[-0.562,-0.9337],"2|16|h":[-0.5512,-0.8734],"2|20|s":[-0.4656,-0.6595],"2|19|s":[-0.4624,-0.6192],"2|18|s":[-0.456,-0.5645],"2|17|s":[-0.4435,-0.4276],"2|16|s":[-0.4227,-0.3771],"3|21|h":[-0.5308,-1.048],"3|20|h":[-0.5209,-1.0033],"3|19|h":[-0.5079,-0.9582],"3|18|h":[-0.4964,-0.9143],"3|17|h":[-0.482,-0.8681],"3|16|h":[-0.4676,-0.8183],"3|21|s":[-0.4186,-0.5236],"3|20|s":[-0.4061,-0.2677],"3|19|s":[-0.3924,-0.1431],"3|18|s":[-0.3787,-0.0439],"3|17|s":[-0.3605,0.0654],"3|16|s":[-0.3427,0.1684],"4|21|h":[-0.4504,-0.9944],"4|20|h":[-0.437,-0.7553],"4|19|h":[-0.4225,-0.6426],"4|18|h":[-0.4091,-0.521],"4|17|h":[-0.3966,-0.3872],"4|16|h":[-0.3819,-0.2318]}},"chartEV":-0.009875,"chartVsBR":-0.011397,"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the banker)","evVsEq":-0.047202,"evVsBR":-0.049983},"casino17":{"name":"Casino habit: hit 16, stand 17+","evVsEq":-0.031277,"evVsBR":-0.035604},"dragonChaser":{"name":"Dragon chaser: always hit 4 cards","evVsEq":-0.076784,"evVsBR":-0.080374}},"baselineCharts":{"standAtMin":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0},"casino17":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"dragonChaser":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":1,"4|20|h":1,"4|19|h":1,"4|18|h":1,"4|17|h":1,"4|16|h":1}}},"bust2":{"rules":{"decks":1,"playerMinStand":16,"dealerMinStand":16,"maxCards":5,"bothBustPush":true,"fiveCardBustMult":2,"pay":{"banBan":3,"banLuck":2,"triple7":7,"dragon":2,"dragon21":3}},"value":-0.031046,"exploitability":0.00001952624213154286,"chart":{"2|20|h":{"hit":0,"standEV":0.518935,"hitEV":-0.620724,"margin":-1.139659},"2|19|h":{"hit":0,"standEV":0.195156,"hitEV":-0.515735,"margin":-0.710891},"2|18|h":{"hit":0,"standEV":-0.078021,"hitEV":-0.436657,"margin":-0.358636},"2|17|h":{"hit":0,"standEV":-0.277242,"hitEV":-0.378918,"margin":-0.101676},"2|16|h":{"hit":0.2306,"standEV":-0.339569,"hitEV":-0.343187,"margin":-0.003618},"2|20|s":{"hit":0,"standEV":0.545977,"hitEV":0.184987,"margin":-0.36099},"2|19|s":{"hit":0,"standEV":0.212649,"hitEV":0.11121,"margin":-0.101439},"2|18|s":{"hit":0.9998,"standEV":-0.054832,"hitEV":0.067163,"margin":0.121995},"2|17|s":{"hit":0.9999,"standEV":-0.248627,"hitEV":0.047822,"margin":0.296449},"2|16|s":{"hit":1,"standEV":-0.308826,"hitEV":0.073939,"margin":0.382765},"3|21|h":{"hit":0,"standEV":0.79961,"hitEV":-0.801797,"margin":-1.601407},"3|20|h":{"hit":0,"standEV":0.547526,"hitEV":-0.665586,"margin":-1.213111},"3|19|h":{"hit":0,"standEV":0.236383,"hitEV":-0.558768,"margin":-0.795151},"3|18|h":{"hit":0,"standEV":-0.025501,"hitEV":-0.482037,"margin":-0.456536},"3|17|h":{"hit":0,"standEV":-0.274377,"hitEV":-0.426073,"margin":-0.151696},"3|16|h":{"hit":0.9257,"standEV":-0.40503,"hitEV":-0.385062,"margin":0.019968},"3|21|s":{"hit":0,"standEV":0.834952,"hitEV":-0.091138,"margin":-0.92609},"3|20|s":{"hit":0,"standEV":0.579241,"hitEV":0.437048,"margin":-0.142193},"3|19|s":{"hit":0.9999,"standEV":0.263194,"hitEV":0.472379,"margin":0.209185},"3|18|s":{"hit":1,"standEV":-0.000402,"hitEV":0.493389,"margin":0.493791},"3|17|s":{"hit":1,"standEV":-0.254499,"hitEV":0.548335,"margin":0.802834},"3|16|s":{"hit":1,"standEV":-0.388407,"hitEV":0.618364,"margin":1.006772},"4|21|h":{"hit":0,"standEV":0.837003,"hitEV":-1.571932,"margin":-2.408935},"4|20|h":{"hit":0,"standEV":0.597378,"hitEV":-1.223938,"margin":-1.821316},"4|19|h":{"hit":0,"standEV":0.29547,"hitEV":-0.978982,"margin":-1.274453},"4|18|h":{"hit":0,"standEV":0.047077,"hitEV":-0.748839,"margin":-0.795915},"4|17|h":{"hit":0,"standEV":-0.190356,"hitEV":-0.501909,"margin":-0.311553},"4|16|h":{"hit":1,"standEV":-0.428564,"hitEV":-0.232346,"margin":0.196218}},"pureChart":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":1,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"hands":{"2|20|h":[["10 10",1,0.518935,-0.620724]],"2|19|h":[["9 10",1,0.195156,-0.515735]],"2|18|h":[["8 10",0.914556,-0.079159,-0.436643],["9 9",0.085444,-0.065843,-0.43681]],"2|17|h":[["7 10",0.800553,-0.280247,-0.378664],["8 9",0.199447,-0.265178,-0.379937]],"2|16|h":[["6 10",0.744844,-0.340586,-0.343468],["7 9",0.185568,-0.339655,-0.342031],["8 8",0.069588,-0.328455,-0.343258]],"2|20|s":[["1 9",1,0.545977,0.184987]],"2|19|s":[["1 8",1,0.212649,0.11121]],"2|18|s":[["1 7",1,-0.054832,0.067163]],"2|17|s":[["1 6",1,-0.248627,0.047822]],"2|16|s":[["1 5",1,-0.308826,0.073939]],"3|21|h":[["5 6 10",0.192352,0.79841,-0.802142],["4 7 10",0.192352,0.799136,-0.801783],["3 8 10",0.192352,0.7993,-0.804],["2 9 10",0.192352,0.80412,-0.803756],["6 7 8",0.071872,0.796648,-0.793079],["5 7 9",0.047915,0.798449,-0.800879],["4 8 9",0.047915,0.797262,-0.802033],["6 6 9",0.026952,0.797914,-0.793194],["5 8 8",0.017968,0.795701,-0.802217],["3 9 9",0.017968,0.800317,-0.802973],["1 10 10",0,0.805779,-0.800921]],"3|20|h":[["4 6 10",0.189571,0.551787,-0.665107],["3 7 10",0.189571,0.549097,-0.665448],["2 8 10",0.189571,0.549671,-0.666244],["5 5 10",0.106634,0.55307,-0.672036],["5 7 8",0.070833,0.540841,-0.663764],["5 6 9",0.070833,0.543617,-0.6645],["4 7 9",0.047222,0.540342,-0.66438],["3 8 9",0.047222,0.537042,-0.666342],["6 7 7",0.026562,0.54348,-0.656185],["6 6 8",0.026562,0.543403,-0.657242],["4 8 8",0.017708,0.536659,-0.665197],["2 9 9",0.017708,0.541424,-0.666232],["1 9 10",0,0.55547,-0.697094]],"3|19|h":[["4 5 10",0.266292,0.244803,-0.555825],["3 6 10",0.177528,0.242157,-0.550173],["2 7 10",0.177528,0.238928,-0.582374],["5 6 8",0.066333,0.223284,-0.550125],["4 7 8",0.066333,0.218255,-0.549599],["4 6 9",0.066333,0.237023,-0.549536],["3 7 9",0.044222,0.229252,-0.550106],["2 8 9",0.044222,0.22711,-0.5846],["6 6 7",0.024875,0.228335,-0.541674],["5 7 7",0.024875,0.221859,-0.548391],["5 5 9",0.024875,0.236798,-0.556468],["3 8 8",0.016583,0.211464,-0.552425],["1 9 9",0,0.249613,-0.576533],["1 8 10",0,0.245418,-0.576387]],"3|18|h":[["3 5 10",0.24651,-0.021458,-0.498288],["2 6 10",0.16434,-0.022709,-0.486876],["4 4 10",0.092441,-0.019959,-0.464338],["1 7 10",0.083502,-0.02219,-0.477547],["5 6 7",0.061405,-0.040061,-0.459556],["4 6 8",0.061405,-0.029529,-0.460873],["4 5 9",0.061405,-0.017596,-0.465495],["3 7 8",0.061405,-0.04135,-0.494971],["3 6 9",0.061405,-0.019741,-0.493237],["2 7 9",0.040937,-0.030443,-0.487983],["5 5 8",0.023027,-0.028838,-0.466989],["4 7 7",0.023027,-0.050883,-0.46052],["2 8 8",0.015351,-0.031352,-0.490673],["6 6 6",0.003838,-0.029451,-0.453477],["1 8 9",0,-0.010622,-0.480105]],"3|17|h":[["3 4 10",0.233022,-0.274006,-0.456319],["2 5 10",0.233022,-0.274105,-0.415988],["1 6 10",0.078934,-0.269733,-0.402421],["4 6 7",0.058046,-0.284121,-0.4254],["4 5 8",0.058046,-0.269799,-0.430394],["3 6 8",0.058046,-0.273637,-0.421584],["3 5 9",0.058046,-0.271648,-0.423672],["2 7 8",0.058046,-0.273652,-0.414129],["2 6 9",0.058046,-0.275739,-0.412107],["5 6 6",0.021767,-0.284302,-0.392565],["5 5 7",0.021767,-0.280101,-0.396799],["4 4 9",0.021767,-0.272097,-0.461329],["3 7 7",0.021767,-0.284405,-0.421594],["1 7 9",0.019681,-0.26779,-0.403533],["1 8 8",0,-0.256028,-0.40635]],"3|16|h":[["2 4 10",0.234821,-0.407819,-0.389309],["1 5 10",0.159086,-0.400933,-0.384948],["3 3 10",0.088058,-0.40777,-0.389559],["4 5 7",0.058494,-0.402526,-0.409568],["3 6 7",0.058494,-0.406638,-0.366607],["3 5 8",0.058494,-0.40395,-0.40304],["3 4 9",0.058494,-0.405468,-0.395452],["2 6 8",0.058494,-0.408228,-0.360112],["2 5 9",0.058494,-0.406695,-0.395417],["1 7 8",0.039666,-0.389022,-0.350542],["1 6 9",0.039666,-0.402929,-0.348817],["5 5 6",0.021935,-0.415895,-0.415946],["4 6 6",0.021935,-0.418243,-0.373122],["4 4 8",0.021935,-0.402926,-0.403146],["2 7 7",0.021935,-0.395783,-0.360425]],"3|21|s":[["1 5 6",0.3,0.833763,-0.091113],["1 4 7",0.3,0.834034,-0.087175],["1 3 8",0.2,0.834368,-0.093003],["1 2 9",0.2,0.838698,-0.095256],["1 1 10",0,0.840751,-0.061363],["1 1 1",0,0.870001,1.482794]],"3|20|s":[["1 4 6",0.328767,0.580471,0.43977],["1 3 7",0.328767,0.577514,0.43625],["1 2 8",0.219178,0.578477,0.433105],["1 5 5",0.123288,0.581925,0.438927],["1 1 9",0,0.584345,0.433757]],"3|19|s":[["1 4 5",0.333333,0.266036,0.467144],["1 3 6",0.333333,0.263585,0.473318],["1 2 7",0.333333,0.259961,0.476676],["1 1 8",0,0.26732,0.453079]],"3|18|s":[["1 3 5",0.380373,-0.000217,0.497099],["1 2 6",0.380373,-0.001184,0.484523],["1 4 4",0.14264,0.001067,0.498525],["1 1 7",0.096615,-0.000219,0.506101]],"3|17|s":[["1 3 4",0.443656,-0.255119,0.539252],["1 2 5",0.443656,-0.255062,0.551635],["1 1 6",0.112689,-0.249836,0.571101]],"3|16|s":[["1 2 4",0.613874,-0.389673,0.611753],["1 3 3",0.230203,-0.389481,0.618544],["1 1 5",0.155924,-0.381837,0.644124]],"4|21|h":[["2 4 5 10",0.11483,0.837665,-1.589345],["2 3 6 10",0.11483,0.840195,-1.573281],["3 3 5 10",0.043061,0.836098,-1.589902],["2 2 7 10",0.043061,0.844702,-1.574512],["3 5 6 7",0.042899,0.832642,-1.561933],["2 5 6 8",0.042899,0.834511,-1.566144],["1 4 6 10",0.038925,0.837506,-1.56319],["1 3 7 10",0.038925,0.840371,-1.565348],["1 2 8 10",0.038925,0.842597,-1.569496],["1 5 7 8",0.033965,0.835104,-1.556483],["1 5 5 10",0.029194,0.83455,-1.578657],["3 4 6 8",0.028599,0.833306,-1.567265],["3 4 5 9",0.028599,0.834122,-1.585523],["2 4 7 8",0.028599,0.837659,-1.568381],["2 4 6 9",0.028599,0.837606,-1.569514],["2 3 7 9",0.028599,0.840445,-1.57155],["3 4 4 10",0.021531,0.836459,-1.59043],["1 5 6 9",0.019409,0.834569,-1.558468],["1 6 7 7",0.016376,0.83645,-1.53683],["4 5 6 6",0.016087,0.829077,-1.560939],["4 5 5 7",0.016087,0.830062,-1.578383],["3 5 5 8",0.016087,0.830354,-1.583177],["2 6 6 7",0.016087,0.83749,-1.544403],["2 5 7 7",0.016087,0.837079,-1.562606],["2 5 5 9",0.016087,0.834707,-1.585701],["1 6 6 8",0.012737,0.834825,-1.539025],["4 4 6 7",0.010725,0.832334,-1.563637],["4 4 5 8",0.010725,0.831244,-1.582385],["3 4 7 7",0.010725,0.834589,-1.566142],["3 3 7 8",0.010725,0.835583,-1.570338],["3 3 6 9",0.010725,0.836836,-1.569081],["2 3 8 8",0.010725,0.837244,-1.574494],["2 2 8 9",0.010725,0.841616,-1.576943],["1 4 7 9",0.009704,0.837701,-1.56112],["1 3 8 9",0.009704,0.838339,-1.565896],["1 4 8 8",0.007278,0.835905,-1.561523],["5 5 5 6",0.003575,0.825427,-1.577981],["3 6 6 6",0.002681,0.832983,-1.543196],["4 4 4 9",0.000894,0.834201,-1.586062],["1 2 9 9",0,0.842279,-1.569458],["1 1 9 10",0,0.844524,-1.562497]],"4|20|h":[["1 4 5 10",0.118044,0.602248,-1.288575],["2 3 5 10",0.099494,0.601468,-1.20129],["1 3 6 10",0.084317,0.605953,-1.274653],["1 2 7 10",0.084317,0.609802,-1.275802],["2 4 4 10",0.055965,0.600207,-1.202593],["3 3 4 10",0.03731,0.598955,-1.203043],["2 2 6 10",0.03731,0.606653,-1.18695],["3 4 6 7",0.03717,0.58898,-1.177922],["3 4 5 8",0.03717,0.585651,-1.196531],["2 5 6 7",0.03717,0.592744,-1.175893],["2 4 6 8",0.03717,0.590784,-1.180749],["2 4 5 9",0.03717,0.590493,-1.198735],["2 3 7 8",0.02478,0.591528,-1.182558],["2 3 6 9",0.02478,0.593904,-1.18284],["4 5 5 6",0.018585,0.582752,-1.1918],["4 4 5 7",0.018585,0.585012,-1.19324],["1 5 6 8",0.016817,0.592567,-1.267011],["1 4 7 8",0.016817,0.593191,-1.268417],["1 4 6 9",0.016817,0.594626,-1.269157],["1 6 6 7",0.014189,0.597606,-1.246898],["1 5 7 7",0.014189,0.59573,-1.263899],["3 5 6 6",0.013939,0.587428,-1.175973],["3 5 5 7",0.013939,0.5877,-1.191441],["3 4 4 9",0.013939,0.588959,-1.198636],["2 5 5 8",0.013939,0.588477,-1.195347],["2 4 7 7",0.013939,0.591839,-1.17963],["3 3 6 8",0.009292,0.587817,-1.182774],["3 3 5 9",0.009292,0.590342,-1.198271],["2 2 7 9",0.009292,0.596639,-1.185749],["1 3 7 9",0.008408,0.597127,-1.272054],["4 4 6 6",0.006969,0.586791,-1.176065],["1 5 5 9",0.006306,0.592294,-1.284896],["3 3 7 7",0.003485,0.590943,-1.179932],["2 2 8 8",0.003485,0.592599,-1.187227],["4 4 4 8",0.003097,0.585224,-1.195942],["2 6 6 6",0.002323,0.595086,-1.158922],["5 5 5 5",0.000194,0.579854,-1.206739],["1 3 8 8",0,0.59205,-1.274967],["1 2 8 9",0,0.597198,-1.276968],["1 1 9 9",0,0.603007,-1.365849],["1 1 8 10",0,0.612166,-1.367008]],"4|19|h":[["2 3 4 10",0.148847,0.301059,-1.002095],["1 3 5 10",0.117732,0.310402,-0.972955],["1 2 6 10",0.084094,0.314083,-1.054307],["3 4 5 7",0.049429,0.27791,-0.899301],["1 4 4 10",0.044149,0.309456,-0.97255],["2 2 5 10",0.037212,0.305652,-1.09635],["2 4 6 7",0.037072,0.281514,-0.979574],["2 4 5 8",0.037072,0.280314,-0.99676],["2 3 6 8",0.037072,0.278451,-0.98317],["2 3 5 9",0.037072,0.293799,-0.9987],["1 4 5 9",0.029351,0.301506,-0.969137],["1 3 6 9",0.029351,0.301379,-0.955475],["1 5 6 7",0.025158,0.291676,-0.949139],["4 4 5 6",0.018536,0.276807,-0.898821],["3 5 5 6",0.018536,0.277411,-0.898499],["3 4 6 6",0.018536,0.278164,-0.88424],["3 4 4 8",0.018536,0.276535,-0.902966],["3 3 6 7",0.018536,0.27751,-0.885502],["3 3 5 8",0.018536,0.275766,-0.903598],["3 3 4 9",0.018536,0.29111,-0.904336],["1 4 6 8",0.016772,0.288363,-0.952887],["2 5 6 6",0.013902,0.282794,-0.977942],["2 5 5 7",0.013902,0.283275,-0.992167],["2 4 4 9",0.013902,0.293399,-0.999831],["2 3 7 7",0.013902,0.279395,-0.980561],["1 1 7 10",0.012813,0.322979,-1.026675],["1 2 7 9",0.012579,0.303692,-1.052708],["3 3 3 10",0.012404,0.297645,-0.908228],["2 2 7 8",0.009268,0.281212,-1.078238],["2 2 6 9",0.009268,0.296075,-1.079813],["1 3 7 8",0.008386,0.286431,-0.955445],["1 5 5 8",0.00629,0.289113,-0.966965],["1 4 7 7",0.004717,0.28832,-0.951981],["4 5 5 5",0.003089,0.275875,-0.912466],["4 4 4 7",0.003089,0.276303,-0.901053],["1 6 6 6",0.002359,0.29283,-0.933528],["1 2 8 8",0,0.288101,-1.054233],["1 1 8 9",0,0.310702,-1.027203]],"4|18|h":[["1 3 4 10",0.11893,0.06029,-0.771949],["1 2 5 10",0.11893,0.062888,-0.750437],["2 3 3 10",0.075181,0.047956,-0.873903],["2 2 4 10",0.075181,0.051191,-0.757699],["3 4 5 6",0.049932,0.029397,-0.698456],["2 4 5 7",0.049932,0.029813,-0.676608],["2 3 6 7",0.049932,0.024945,-0.75784],["2 3 5 8",0.049932,0.040391,-0.774909],["2 3 4 9",0.049932,0.052375,-0.776678],["1 4 5 8",0.02965,0.052394,-0.671692],["1 3 5 9",0.02965,0.063191,-0.769038],["1 3 6 8",0.021179,0.047285,-0.754987],["1 2 7 8",0.021179,0.045947,-0.733893],["1 2 6 9",0.021179,0.06054,-0.735187],["3 4 4 7",0.018724,0.027185,-0.699953],["3 3 5 7",0.018724,0.027388,-0.793593],["3 3 4 8",0.018724,0.039396,-0.798089],["2 5 5 6",0.018724,0.032483,-0.676138],["2 4 6 6",0.018724,0.02986,-0.662922],["2 4 4 8",0.018724,0.042309,-0.679886],["2 2 6 8",0.018724,0.038341,-0.740033],["2 2 5 9",0.018724,0.05362,-0.755552],["1 1 6 10",0.012943,0.071434,-0.731427],["1 4 6 7",0.012707,0.037886,-0.656347],["1 4 4 9",0.011119,0.06314,-0.673601],["1 5 5 7",0.00953,0.042786,-0.668261],["4 4 5 5",0.007022,0.031294,-0.616201],["3 3 6 6",0.007022,0.02639,-0.779716],["2 2 7 7",0.007022,0.022401,-0.737489],["1 5 6 6",0.004765,0.041368,-0.655603],["1 3 7 7",0.004765,0.033248,-0.752695],["1 1 7 9",0.00323,0.069841,-0.729538],["4 4 4 6",0.003121,0.029956,-0.603789],["3 5 5 5",0.003121,0.032201,-0.711161],["3 3 3 9",0.003121,0.051651,-0.893588],["1 1 8 8",0,0.06826,-0.731083]],"4|17|h":[["1 2 4 10",0.172856,-0.183105,-0.54941],["2 2 3 10",0.076489,-0.192845,-0.533693],["1 3 3 10",0.064821,-0.182053,-0.528767],["2 4 5 6",0.0508,-0.210063,-0.475982],["2 3 5 7",0.0508,-0.20015,-0.453849],["2 3 4 8",0.0508,-0.187971,-0.553022],["1 3 4 9",0.043094,-0.180584,-0.547005],["1 1 5 10",0.039505,-0.17201,-0.448277],["1 4 5 7",0.038785,-0.190412,-0.468976],["1 3 6 7",0.038785,-0.197173,-0.436178],["1 3 5 8",0.034475,-0.178583,-0.451356],["1 2 6 8",0.034475,-0.186558,-0.439298],["1 2 5 9",0.034475,-0.180984,-0.452705],["1 2 7 7",0.019392,-0.190303,-0.437013],["3 4 5 5",0.01905,-0.204201,-0.488676],["3 4 4 6",0.01905,-0.210939,-0.571872],["3 3 5 6",0.01905,-0.209573,-0.455349],["3 3 4 7",0.01905,-0.200129,-0.551316],["2 4 4 7",0.01905,-0.201746,-0.572162],["2 3 6 6",0.01905,-0.216475,-0.441713],["2 3 3 9",0.01905,-0.188913,-0.53239],["2 2 6 7",0.01905,-0.208625,-0.441712],["2 2 5 8",0.01905,-0.188258,-0.457098],["2 2 4 9",0.01905,-0.190834,-0.554635],["1 4 4 8",0.01616,-0.179481,-0.566256],["1 1 7 8",0.009858,-0.167956,-0.433511],["1 1 6 9",0.009858,-0.178063,-0.434462],["1 4 6 6",0.009696,-0.206004,-0.456566],["1 5 5 6",0.004848,-0.198735,-0.374389],["4 4 4 5",0.003175,-0.206597,-0.605869],["3 3 3 8",0.003175,-0.186477,-0.534088],["2 5 5 5",0.003175,-0.202424,-0.392382]],"4|16|h":[["1 2 3 10",0.219225,-0.427713,-0.231872],["1 2 6 7",0.065585,-0.418521,-0.14224],["2 3 5 6",0.064428,-0.441454,-0.253593],["2 3 4 7",0.064428,-0.430565,-0.232921],["1 1 4 10",0.050102,-0.41888,-0.225982],["1 3 5 7",0.049189,-0.420862,-0.247779],["1 3 4 8",0.043723,-0.423068,-0.229535],["1 2 5 8",0.043723,-0.423045,-0.250478],["1 2 4 9",0.043723,-0.425111,-0.230536],["1 4 5 6",0.032792,-0.43143,-0.2477],["1 3 6 6",0.024594,-0.4282,-0.142426],["3 4 4 5",0.02416,-0.445699,-0.340034],["3 3 4 6",0.02416,-0.441439,-0.233674],["2 4 5 5",0.02416,-0.444681,-0.360381],["2 4 4 6",0.02416,-0.440333,-0.232973],["2 3 3 8",0.02416,-0.431731,-0.235985],["2 2 5 7",0.02416,-0.430402,-0.252675],["2 2 4 8",0.02416,-0.430503,-0.235059],["2 2 3 9",0.02416,-0.433833,-0.235816],["1 3 3 9",0.020495,-0.424269,-0.230597],["2 2 2 10",0.016168,-0.435984,-0.236726],["1 1 6 8",0.012503,-0.411456,-0.139822],["1 1 5 9",0.012503,-0.416271,-0.246005],["1 4 4 7",0.012297,-0.42187,-0.226824],["3 3 5 5",0.00906,-0.445027,-0.361156],["2 2 6 6",0.00906,-0.437441,-0.147239],["1 1 7 7",0.007814,-0.40023,-0.137907],["3 3 3 7",0.004027,-0.429604,-0.234116],["1 5 5 5",0.001025,-0.434581,-0.37538],["4 4 4 4",0.000252,-0.445842,-0.31918]]},"why":{"2|16|h":{"stand":-0.339569,"hit":-0.343186,"bankerBust":0.353819,"banker16":0,"bust":0.599651,"safe":20,"standPay":[0.000186,0.006773,0.032547,0.606675,0,0.353819,0,0,0],"hitPay":[0.000186,0.006806,0.033632,0.488687,0.236205,0.234484,0,0,0]},"3|16|h":{"stand":-0.40503,"hit":-0.385062,"bankerBust":0.311189,"banker16":0.011389,"bust":0.627339,"safe":18.240208,"standPay":[0.000197,0.005655,0.0263,0.64527,0.011389,0.311189,0,0,0],"hitPay":[0.000197,0.005449,0.025701,0.543473,0.197641,0.22754,0,0,0]},"4|16|h":{"stand":-0.428564,"hit":-0.232346,"bankerBust":0.239981,"banker16":0.120748,"bust":0.644155,"safe":17.060831,"standPay":[0.000201,0.004468,0.019134,0.615465,0.120748,0.239981,0,0,0],"hitPay":[0.000201,0.002137,0.502718,0,0.14263,0,0.276017,0.076292,0]},"2|17|h":{"stand":-0.277242,"hit":-0.378918,"bankerBust":0.352763,"banker16":0,"bust":0.67946,"safe":16,"standPay":[0.000086,0.006959,0.033352,0.541821,0.065019,0.352763,0,0,0],"hitPay":[0.000086,0.007002,0.03449,0.496543,0.253662,0.208216,0,0,0]},"3|17|h":{"stand":-0.274377,"hit":-0.426073,"bankerBust":0.310375,"banker16":0.011384,"bust":0.69758,"safe":14.78879,"standPay":[0.000198,0.005814,0.027489,0.522331,0.122412,0.321759,0,0,0],"hitPay":[0.000198,0.005597,0.026856,0.557716,0.206107,0.20353,0,0,0]},"4|17|h":{"stand":-0.190356,"hit":-0.501909,"bankerBust":0.239771,"banker16":0.121279,"bust":0.718525,"safe":13.482161,"standPay":[0.000203,0.004598,0.020077,0.496036,0.118032,0.36105,0,0,0],"hitPay":[0.000203,0.002243,0.561494,0,0.1573,0,0.207044,0.071713,0]}},"bankerChart":{"2":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0.7234,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0.9999,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0.1677,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0.1298,"4|17|h":1,"4|16|h":1},"3":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0.9986,"2|20|s":0,"2|19|s":0,"2|18|s":0.9997,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0.7748,"3|21|s":0,"3|20|s":0.9994,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"4":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0.9998,"2|17|s":1,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9975,"3|19|s":1,"3|18|s":1,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":1,"4|16|h":1},"5":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0.9989,"3|19|s":0.9999,"3|18|s":0.9999,"3|17|s":1,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0}},"bankerEV":{"2":{"2|20|h":[0.7133,-0.9185],"2|19|h":[0.2092,-0.7617],"2|18|h":[-0.1579,-0.6363],"2|17|h":[-0.5203,-0.5302],"2|16|h":[-0.8604,-0.4885],"2|20|s":[0.6734,-0.1114],"2|19|s":[0.1536,-0.0925],"2|18|s":[-0.2,0.0303],"2|17|s":[-0.5427,0.0123],"2|16|s":[-0.844,0.1159],"3|21|h":[1,-1],"3|20|h":[0.6768,-0.8343],"3|19|h":[0.1689,-0.7031],"3|18|h":[-0.1784,-0.6147],"3|17|h":[-0.5182,-0.5549],"3|16|h":[-0.8489,-0.4869],"3|21|s":[1,-0.071],"3|20|s":[0.6767,0.5792],"3|19|s":[0.1784,0.6132],"3|18|s":[-0.1617,0.6009],"3|17|s":[-0.5031,0.6549],"3|16|s":[-0.8436,0.8203],"4|21|h":[1,-1],"4|20|h":[0.6797,-0.6899],"4|19|h":[0.1759,-0.4716],"4|18|h":[-0.1702,-0.2654],"4|17|h":[-0.5148,-0.0498],"4|16|h":[-0.8503,0.1877]},"3":{"2|20|h":[0.5936,-0.5984],"2|19|h":[0.3529,-0.478],"2|18|h":[0.1201,-0.378],"2|17|h":[-0.1289,-0.2815],"2|16|h":[-0.2664,-0.2403],"2|20|s":[0.6224,0.0531],"2|19|s":[0.3873,0.0916],"2|18|s":[0.1557,0.2396],"2|17|s":[-0.0939,0.2184],"2|16|s":[-0.2397,0.2506],"3|21|h":[0.8658,-0.6369],"3|20|h":[0.6075,-0.5066],"3|19|h":[0.3668,-0.4094],"3|18|h":[0.1354,-0.3413],"3|17|h":[-0.1113,-0.2918],"3|16|h":[-0.2439,-0.2377],"3|21|s":[0.8701,0.1498],"3|20|s":[0.6211,0.6778],"3|19|s":[0.3837,0.7043],"3|18|s":[0.152,0.7367],"3|17|s":[-0.0902,0.7915],"3|16|s":[-0.2179,0.9264],"4|21|h":[0.8675,-0.6217],"4|20|h":[0.6111,-0.3391],"4|19|h":[0.3732,-0.1579],"4|18|h":[0.1452,0.0135],"4|17|h":[-0.0909,0.1915],"4|16|h":[-0.2169,0.3822]},"4":{"2|20|h":[0.7046,-0.4685],"2|19|h":[0.4879,-0.3681],"2|18|h":[0.2759,-0.2774],"2|17|h":[0.0712,-0.1822],"2|16|h":[-0.0238,-0.1244],"2|20|s":[0.704,0.1539],"2|19|s":[0.4963,0.1733],"2|18|s":[0.2967,0.3357],"2|17|s":[0.1096,0.3264],"2|16|s":[0.0265,0.3649],"3|21|h":[0.9107,-0.5069],"3|20|h":[0.7194,-0.3912],"3|19|h":[0.5144,-0.3028],"3|18|h":[0.3098,-0.235],"3|17|h":[0.1109,-0.1814],"3|16|h":[0.0143,-0.1286],"3|21|s":[0.909,0.2251],"3|20|s":[0.7161,0.7285],"3|19|s":[0.515,0.7601],"3|18|s":[0.3187,0.7869],"3|17|s":[0.1364,0.8392],"3|16|s":[0.0507,0.9318],"4|21|h":[0.9108,-0.4893],"4|20|h":[0.7204,-0.2343],"4|19|h":[0.5184,-0.0781],"4|18|h":[0.3226,0.0798],"4|17|h":[0.136,0.2438],"4|16|h":[0.0459,0.4284]},"5":{"2|20|h":[-0.367,-1.1968],"2|19|h":[-0.3619,-1.1324],"2|18|h":[-0.3564,-1.0628],"2|17|h":[-0.3476,-0.9868],"2|16|h":[-0.3311,-0.9033],"2|20|s":[-0.2262,-0.5812],"2|19|s":[-0.2204,-0.5325],"2|18|s":[-0.2115,-0.4685],"2|17|s":[-0.1922,-0.403],"2|16|s":[-0.1564,-0.2408],"3|21|h":[-0.3063,-1.1966],"3|20|h":[-0.2919,-1.1244],"3|19|h":[-0.275,-1.0545],"3|18|h":[-0.2605,-0.985],"3|17|h":[-0.2448,-0.914],"3|16|h":[-0.23,-0.8408],"3|21|s":[-0.1638,-0.511],"3|20|s":[-0.1506,-0.1332],"3|19|s":[-0.1296,-0.0352],"3|18|s":[-0.1108,0.0362],"3|17|s":[-0.0927,0.1074],"3|16|s":[-0.082,0.1649],"4|21|h":[-0.2066,-1.1474],"4|20|h":[-0.1862,-0.8992],"4|19|h":[-0.1698,-0.7963],"4|18|h":[-0.1552,-0.6788],"4|17|h":[-0.1415,-0.5465],"4|16|h":[-0.1208,-0.3878]}},"chartEV":-0.030566,"chartVsBR":-0.032091,"baselines":{"standAtMin":{"name":"Stand on 16+ (copy the banker)","evVsEq":-0.053738,"evVsBR":-0.056516},"casino17":{"name":"Casino habit: hit 16, stand 17+","evVsEq":-0.044199,"evVsBR":-0.048513},"dragonChaser":{"name":"Dragon chaser: always hit 4 cards","evVsEq":-0.124818,"evVsBR":-0.128357}},"baselineCharts":{"standAtMin":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":0},"casino17":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":1,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":1,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":1,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":1,"4|21|h":0,"4|20|h":0,"4|19|h":0,"4|18|h":0,"4|17|h":0,"4|16|h":1},"dragonChaser":{"2|20|h":0,"2|19|h":0,"2|18|h":0,"2|17|h":0,"2|16|h":0,"2|20|s":0,"2|19|s":0,"2|18|s":0,"2|17|s":0,"2|16|s":0,"3|21|h":0,"3|20|h":0,"3|19|h":0,"3|18|h":0,"3|17|h":0,"3|16|h":0,"3|21|s":0,"3|20|s":0,"3|19|s":0,"3|18|s":0,"3|17|s":0,"3|16|s":0,"4|21|h":1,"4|20|h":1,"4|19|h":1,"4|18|h":1,"4|17|h":1,"4|16|h":1}}}},"mc":{"generated":"2026-10-02T06:35:14.067Z","variants":{"bust1":[{"id":"optimal","label":"Optimal chart","hands":20000000,"mean":-0.010061,"se":0.000271,"exact":-0.009875,"z":-0.69,"win":0.42323,"loss":0.43429,"push":0.14248},{"id":"standAtMin","label":"Stand on 16+ (copy the banker)","hands":20000000,"mean":-0.047346,"se":0.000265,"exact":-0.047202,"z":-0.54,"win":0.422254,"loss":0.446469,"push":0.131277},{"id":"casino17","label":"Casino habit: hit 16, stand 17+","hands":20000000,"mean":-0.031301,"se":0.000265,"exact":-0.031277,"z":-0.09,"win":0.414288,"loss":0.429907,"push":0.155806},{"id":"dragonChaser","label":"Dragon chaser: always hit 4 cards","hands":20000000,"mean":-0.076984,"se":0.000269,"exact":-0.076784,"z":-0.74,"win":0.397285,"loss":0.466544,"push":0.136171}],"bust2":[{"id":"optimal","label":"Optimal chart","hands":20000000,"mean":-0.030247,"se":0.000273,"exact":-0.030566,"z":1.17,"win":0.425557,"loss":0.432614,"push":0.141829},{"id":"standAtMin","label":"Stand on 16+ (copy the banker)","hands":20000000,"mean":-0.053781,"se":0.000267,"exact":-0.053738,"z":-0.16,"win":0.422291,"loss":0.446491,"push":0.131218},{"id":"casino17","label":"Casino habit: hit 16, stand 17+","hands":20000000,"mean":-0.044032,"se":0.000269,"exact":-0.044199,"z":0.62,"win":0.414441,"loss":0.430037,"push":0.155523},{"id":"dragonChaser","label":"Dragon chaser: always hit 4 cards","hands":20000000,"mean":-0.125327,"se":0.000281,"exact":-0.124818,"z":-1.81,"win":0.397278,"loss":0.467895,"push":0.134827}]}}};</script>
 <script>/* Banluck Strategy Lab: page logic. Needs BanluckCore, BL_DATA and CORE_SRC globals. */
 (function () {
   'use strict';
@@ -1876,7 +2141,7 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
     const label = mixed ? (H ? 'Hit*' : 'Stand*') : H ? 'Hit' : 'Stand';
     const hb = info.hitEV >= info.standEV;
     const evs = `<span class="evs"><span${hb ? ' class="b"' : ''}>H ${fmt(info.hitEV, 2)}</span><span${hb ? '' : ' class="b"'}>S ${fmt(info.standEV, 2)}</span></span>`;
-    return `<td><div class="cell ${H ? 'H' : 'S'}${strong ? ' strong' : ''}${mixed ? ' mixed' : ''}" title="${esc(title)}">${label}${evs}</div></td>`;
+    return `<td><div class="cell ${H ? 'H' : 'S'}${strong ? ' strong' : ''}${mixed ? ' mixed' : ''}${M.key === `${n}|${t}|${s}` ? ' sel' : ''}" data-key="${n}|${t}|${s}" role="button" tabindex="0" title="${esc(title + ' Tap for the math.')}">${label}${evs}</div></td>`;
   }
   function renderChart() {
     const v = V(), info = chartInfo(), pure = playerChart();
@@ -2054,6 +2319,301 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
     });
   }
 
+  // ---------------- show the math ----------------
+  // Every chart cell can be opened to show the chance of each outcome, the EV sum,
+  // and every hand in the cell. The numbers are recomputed in a worker by
+  // js/exact.js (direct enumeration) and checked against the solver's values.
+  const PAYOFFS = [-7, -3, -2, -1, 0, 1, 2, 3, 7];
+  const PAY_LABEL = { 7: 'Win 7× (777)', 3: 'Win 3×', 2: 'Win 2×', 1: 'Win 1×', 0: 'Push', '-1': 'Lose 1×', '-2': 'Lose 2×', '-3': 'Lose 3×', '-7': 'Lose 7×' };
+  const CAT_LABEL = ['Busts', 'Stops on 16', 'Ends on 17', 'Ends on 18', 'Ends on 19', 'Ends on 20', 'Ends on 21', 'Makes 五龙', 'Makes 五龙 21', 'Makes 777'];
+  const RANK = (r) => (r === 1 ? 'A' : String(r));
+  const chips = (ranks) => `<span class="rks">${ranks.map((r) => `<span class="rk">${RANK(r)}</span>`).join('')}</span>`;
+  const pc1 = (p) => (p * 100).toFixed(1) + '%';
+  const parseHand = (s) => s.split(' ').map(Number);
+  const M = { key: '2|16|h', path: null, showAll: false, cache: new Map(), pending: new Map(), req: 0, mc: null };
+  const MATH_SRC = `${window.CORE_SRC}
+${window.EXACT_SRC}
+  var engines = {};
+  function engine(m) { return engines[m.vid] || (engines[m.vid] = self.BanluckExact.create(m.rules, m.pchart, m.bchart)); }
+  function slim(E, ranks) {
+    var X = self.BanluckExact, r = E.explain(X.fromRanks(ranks)), e = r.eval;
+    return {
+      ranks: ranks,
+      eval: { n: e.n, total: e.total, soft: e.soft, bust: e.bust, tier: e.tier, terminal: e.terminal },
+      stand: { cats: Array.from(r.stand.cats), catPay: r.stand.catPay, payoff: Array.from(r.stand.payoff), ev: r.stand.ev },
+      hit: r.hit && { payoff: Array.from(r.hit.payoff), ev: r.hit.ev, rows: r.hit.rows.map(function (x) {
+        return { rank: x.rank, left: x.left, rem: x.rem, prob: x.prob, child: X.cardsOf(x.child), n: x.eval.n, total: x.eval.total, bust: x.eval.bust, tier: x.eval.tier, terminal: x.eval.terminal, hits: x.hits, ev: x.ev };
+      }) },
+    };
+  }
+  function simulate(m) {
+    var C = self.BanluckCore, rules = m.rules, pp = C.chartPolicy(m.pchart), dp = C.dealerChartPolicy(m.bchart), rand = C.rng(m.seed);
+    var deck = [], r, k;
+    for (r = 1; r <= 10; r++) for (k = 0; k < (r === 10 ? 16 : 4); k++) deck.push(r);
+    m.ranks.forEach(function (c) { deck.splice(deck.indexOf(c), 1); });
+    var hand = m.ranks, pe0 = C.evaluate(hand, rules), canHit = !pe0.terminal;
+    var S = 0, S2 = 0, H = 0, H2 = 0, D = 0, D2 = 0, i = 0, n = m.n;
+    function bank(d, idx, np, pe) {
+      var dl = d.slice(), de = C.evaluate(dl, rules);
+      while (!de.terminal) {
+        if (de.total >= rules.dealerMinStand) { var q = dp(dl, np); if (!(q >= 1 || (q > 0 && rand() < q))) break; }
+        dl.push(deck[idx++]); de = C.evaluate(dl, rules);
+      }
+      return C.settle(pe, de, rules);
+    }
+    function stats(s, s2) { var mean = s / i; return { mean: mean, se: Math.sqrt(Math.max(0, s2 / i - mean * mean) / i) }; }
+    function step() {
+      var end = Math.min(n, i + 25000);
+      for (; i < end; i++) {
+        var d;
+        // fresh banker cards each time; Ban-Ban / Ban-Luck would already be settled, so redeal those
+        do {
+          for (var j = 0; j < 9; j++) { var x = j + Math.floor(rand() * (deck.length - j)), t = deck[j]; deck[j] = deck[x]; deck[x] = t; }
+          d = [deck[0], deck[1]];
+        } while (C.special2(d));
+        var rs = bank(d, 2, hand.length, pe0);
+        S += rs; S2 += rs * rs;
+        if (canHit) {
+          var p = hand.concat([deck[2]]), idx = 3, pe = C.evaluate(p, rules);
+          while (!pe.terminal && (pe.total < rules.playerMinStand || pp(p) >= 1)) { p.push(deck[idx++]); pe = C.evaluate(p, rules); }
+          var rh = bank(d, idx, p.length, pe);
+          H += rh; H2 += rh * rh; D += rh - rs; D2 += (rh - rs) * (rh - rs);
+        }
+      }
+      postMessage({ id: m.id, done: i, n: n, stand: stats(S, S2), hit: canHit ? stats(H, H2) : null, diff: canHit ? stats(D, D2) : null });
+      if (i < n) setTimeout(step, 0);
+    }
+    step();
+  }
+  onmessage = function (e) {
+    var m = e.data;
+    if (m.type === 'explain') { var E = engine(m); postMessage({ id: m.id, out: m.hands.map(function (h) { return slim(E, h); }) }); }
+    else if (m.type === 'mc') simulate(m);
+  };`;
+  let mathWorker = null, mathUrl = null;
+  function mathCall(msg, cb) {
+    if (!mathWorker) {
+      try {
+        mathUrl = mathUrl || URL.createObjectURL(new Blob([MATH_SRC], { type: 'text/javascript' }));
+        mathWorker = new Worker(mathUrl);
+        mathWorker.onmessage = (e) => { const f = M.pending.get(e.data.id); if (f) f(e.data); };
+      } catch (err) { mathWorker = null; return false; }
+    }
+    const id = ++M.req;
+    M.pending.set(id, cb);
+    mathWorker.postMessage(Object.assign({ id, vid: S.variant, rules: rules(), pchart: playerChart(), bchart: V().bankerChart }, msg));
+    return id;
+  }
+  const ckey = (ranks) => S.variant + '|' + ranks.join(',');
+  // Run cb once every hand is computed (cached per rule variant).
+  function withHands(list, cb) {
+    const missing = list.filter((r) => !M.cache.has(ckey(r)));
+    if (!missing.length) { cb(list.map((r) => M.cache.get(ckey(r)))); return; }
+    const vid = S.variant;
+    const ok = mathCall({ type: 'explain', hands: missing }, (d) => {
+      d.out.forEach((x) => M.cache.set(vid + '|' + x.ranks.join(','), x));
+      if (vid === S.variant) withHands(list, cb);
+    });
+    if (ok === false) $('#math-body').innerHTML = '<p class="small">This browser blocked background workers, so the math panel cannot run here.</p>';
+  }
+
+  // Outcome table for one or more columns of payoff distributions, with the EV sum under it.
+  function outcomeTable(cols) {
+    const live = PAYOFFS.map((x, i) => i).filter((i) => cols.some((c) => c.pay[i] > 0.00005)).reverse();
+    let h = `<div class="scroll"><table class="data"><thead><tr><th>Outcome</th>${cols.map((c) => `<th class="n">${c.label}</th>`).join('')}</tr></thead><tbody>`;
+    for (const i of live) h += `<tr><td>${PAY_LABEL[PAYOFFS[i]]}</td>${cols.map((c) => `<td class="n">${pc1(c.pay[i])}</td>`).join('')}</tr>`;
+    h += `</tbody><tfoot><tr><td>EV per unit bet</td>${cols.map((c) => `<td class="n${c.best ? ' better' : ''}">${fmt(c.ev, 3)}</td>`).join('')}</tr></tfoot></table></div>`;
+    for (const c of cols) {
+      const terms = live.filter((i) => c.pay[i] > 0.00005).map((i) => `${PAYOFFS[i] > 0 ? '+' : PAYOFFS[i] < 0 ? '−' : ''}${Math.abs(PAYOFFS[i])} × ${pc1(c.pay[i])}`);
+      h += `<p class="eq">${esc(c.label)}: ${terms.join('  ')}  = <b>${fmt(c.ev, 3)}</b></p>`;
+    }
+    return h;
+  }
+
+  function mathFacts(results, list) {
+    const a = { stand: new Array(9).fill(0), hit: new Array(9).fill(0), sEV: 0, hEV: 0, bb: 0, b16: 0, bust: 0, safe: 0, win: 0 };
+    results.forEach((r, j) => {
+      const w = list[j][1];
+      a.sEV += w * r.stand.ev; a.bb += w * r.stand.cats[0]; a.b16 += w * r.stand.cats[1];
+      for (let i = 0; i < 9; i++) a.stand[i] += w * r.stand.payoff[i];
+      if (r.hit) {
+        a.hEV += w * r.hit.ev;
+        for (let i = 0; i < 9; i++) a.hit[i] += w * r.hit.payoff[i];
+        for (const x of r.hit.rows) { if (x.bust) a.bust += w * x.prob; else a.safe += w * x.left; }
+      }
+    });
+    a.win = a.hit[5] + a.hit[6] + a.hit[7] + a.hit[8];
+    return a;
+  }
+
+  // Plain-English reasons for a cell, built from its own numbers.
+  function mathWhy(key, a, info) {
+    const [n, t, s] = key.split('|').map((x, i) => (i < 2 ? +x : x));
+    const out = [];
+    const d = a.hEV - a.sEV, unseen = 52 - n;
+    out.push(Math.abs(d) < 0.005 ? `Hitting and standing are within ${Math.abs(d).toFixed(3)} units of each other: a dead heat.`
+      : `${d > 0 ? 'Hitting' : 'Standing'} is better by ${Math.abs(d).toFixed(3)} units per hand.`);
+    if (s === 'h') {
+      out.push(`<b>If you stand</b>, the banker busts ${pc1(a.bb)} of the time against a ${n}-card hand` +
+        (a.b16 > 0.005 ? ` and stops on 16 another ${pc1(a.b16)}` : '') + '. ' +
+        (t === 16 ? 'A standing 16 only wins when he busts: any banker total of 16 or more ties or beats it.'
+          : `You win when he busts or stops below ${t}.`) +
+        (n === 2 ? ' Against two cards he can\'t tell your hand from a 20, so he keeps drawing.' : n === 3 ? ' Once you\'ve drawn, he expects 17 or better and plays accordingly.' : ' Half of four-card players have silently busted, so he often settles for 16 and opens them.'));
+      const base = 4 * (21 - t);
+      out.push(`<b>If you hit</b>, ${pc1(a.bust)} of the cards bust you: on average only ${a.safe.toFixed(1)} of the ${unseen} unseen cards keep you alive` +
+        (n > 2 && t >= 12 ? ` (a two-card ${t} has ${base}). That is card removal: the small cards that built your hand are no longer in the deck.` : '.') +
+        (n === 4 ? ` But every card that doesn't bust you makes 五龙, paid 2× (3× on 21), so ${pc1(a.win)} of hits win.` : '') +
+        (n === 4 && S.variant === 'bust2' ? ' A bust on the fifth card costs you 2×.' : ''));
+    } else if (n === 2) {
+      out.push('<b>The third card can\'t bust you.</b> The Ace drops from 11 to 10 or 1 to absorb it, so a hit is a free look at a better hand and a step towards 五龙.');
+    } else {
+      out.push('<b>The fourth card can\'t bust you.</b> The Ace drops from 10 to 1, so you land on (total − 9) plus the new card. From there you are one card from 五龙.');
+    }
+    if (info.hit > 0.1 && info.hit < 0.9) out.push(`The solver mixes here, hitting about ${Math.round(info.hit * 100)}% of the time, so the banker can't read you. Either choice costs almost nothing.`);
+    if (key === '4|17|h') out.push(S.variant === 'bust2' ? 'With the 1× rule a five-card bust costs only 1, and hitting becomes the better play.' : 'With the 2× rule a five-card bust costs 2, and standing becomes the better play.');
+    return out.map((x) => `<p>${x}</p>`).join('');
+  }
+
+  function openMath(key, scroll) {
+    M.key = key; M.path = null; M.showAll = false; M.mc = null;
+    $$('#strat .cell.sel').forEach((c) => c.classList.remove('sel'));
+    const cell = $(`#strat .cell[data-key="${key}"]`);
+    if (cell) cell.classList.add('sel');
+    renderMath();
+    if (scroll) $('#math').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function renderMath() {
+    const v = V(), key = M.key, list = v.hands[key], info = v.chart[key];
+    if (!list) return;
+    const body = $('#math-body');
+    const hitIt = playerChart()[key] === 1, mixed = info.hit > 0.1 && info.hit < 0.9;
+    const head = `<div class="math-head"><h3>${esc(evTitle(key))}</h3><span class="pill ${hitIt ? 'hit' : 'stand'}">${hitIt ? 'Hit' : 'Stand'}</span>` +
+      `<span class="evs">Hit ${fmt(info.hitEV)} · Stand ${fmt(info.standEV)} · ${bustLabel()}</span></div>`;
+    body.innerHTML = head + '<p class="small">Working it out…</p>';
+    withHands(list.map((x) => parseHand(x[0])), (results) => {
+      if (M.key !== key) return;
+      const a = mathFacts(results, list), hb = a.hEV > a.sEV;
+      const many = list.length > 12 && !M.showAll;
+      const rows = (many ? list.slice(0, 12) : list).map((x, j) => {
+        const r = results[j];
+        let safe = 0; for (const y of r.hit.rows) if (!y.bust) safe += y.left;
+        const sel = M.path && M.path.length === 1 && M.path[0].join(' ') === x[0];
+        return `<tr class="pick${sel ? ' on' : ''}" data-hand="${x[0]}" tabindex="0"><td>${chips(r.ranks)}</td><td class="n">${pc1(x[1])}</td><td class="n">${safe} of ${52 - r.ranks.length}</td>` +
+          `<td class="n${r.stand.ev >= r.hit.ev ? ' better' : ''}">${fmt(r.stand.ev, 3)}</td><td class="n${r.hit.ev > r.stand.ev ? ' better' : ''}">${fmt(r.hit.ev, 3)}</td></tr>`;
+      }).join('');
+      body.innerHTML = head +
+        `<div class="math-why">${mathWhy(key, a, info)}</div>` +
+        `<div class="math-grid">` +
+        `<div class="box"><h3>Chance of each outcome</h3><p class="small">All hands in this cell, weighted by how often you hold them. EV is the sum of each result times its chance.</p>` +
+        outcomeTable([{ label: 'Stand', pay: a.stand, ev: a.sEV, best: !hb }, { label: 'Hit', pay: a.hit, ev: a.hEV, best: hb }]) + '</div>' +
+        `<div class="box"><h3>The hands in this cell</h3><p class="small">Same total, different cards. Which cards you hold changes what is left in the deck (card removal), so each hand has its own EVs. Tap one for its full working.</p>` +
+        `<div class="scroll"><table class="data"><thead><tr><th>Hand</th><th class="n">How often</th><th class="n">Safe next cards</th><th class="n">Stand</th><th class="n">Hit</th></tr></thead><tbody>${rows}</tbody></table></div>` +
+        (many ? `<button type="button" class="btn ghost" id="math-all">Show all ${list.length} hands</button>` : '') + '</div>' +
+        `</div><div id="math-hand"></div>`;
+      $$('#math-body tr.pick').forEach((tr) => {
+        const go = () => { M.path = [parseHand(tr.dataset.hand)]; M.mc = null; renderMath(); $('#math-hand').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+        tr.addEventListener('click', go);
+        tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+      });
+      const all = $('#math-all');
+      if (all) all.addEventListener('click', () => { M.showAll = true; renderMath(); });
+      if (!M.path) M.path = [parseHand(list[0][0])];
+      renderMathHand();
+    });
+  }
+
+  function handDesc(e) {
+    if (e.bust) return `${e.n === 5 ? 'five-card ' : ''}bust (${e.total})`;
+    if (e.tier === 3) return '777';
+    if (e.n === 5) return e.total === 21 ? '五龙 21' : '五龙';
+    return `${e.soft ? 'Ace-high ' : ''}${e.total}`;
+  }
+  function thenLabel(x) {
+    if (x.bust) return x.n === 5 ? 'Five-card bust' : 'Bust';
+    if (x.tier === 3) return '777';
+    if (x.n === 5) return x.total === 21 ? '五龙 21' : '五龙';
+    if (x.total < rules().playerMinStand) return 'Must hit';
+    return x.hits >= 0.5 ? 'Hit (chart)' : 'Stand';
+  }
+  function renderMathHand() {
+    const box = $('#math-hand');
+    if (!box || !M.path) return;
+    const ranks = M.path[M.path.length - 1];
+    withHands([ranks], ([r]) => {
+      if (!M.path || M.path[M.path.length - 1] !== ranks) return;
+      const crumbs = M.path.map((p, i) => (i === M.path.length - 1 ? `<span>${chips(p)}</span>` : `<button type="button" data-i="${i}">${chips(p)}</button><span aria-hidden="true">→</span>`)).join('');
+      const top = M.path.length === 1 ? (V().hands[M.key] || []).find((x) => x[0] === ranks.join(' ')) : null;
+      let check = '';
+      if (top) {
+        const ok = Math.abs(top[2] - r.stand.ev) < 1e-4 && Math.abs(top[3] - r.hit.ev) < 1e-4;
+        check = `<div class="check"><span>Solver: stand <span class="mono">${fmt(top[2], 4)}</span>, hit <span class="mono">${fmt(top[3], 4)}</span></span>` +
+          `<span>Recomputed in your browser: stand <span class="mono">${fmt(r.stand.ev, 4)}</span>, hit <span class="mono">${fmt(r.hit.ev, 4)}</span></span>` +
+          `<span class="${ok ? 'ok' : 'bad'}">${ok ? '✓ match' : '✗ mismatch'}</span></div>`;
+      }
+      let st = `<div class="box"><h3>${r.hit ? 'If you stand' : 'Your hand is finished'}: how the banker finishes</h3>` +
+        `<p class="small">He plays the banker's chart against a ${r.eval.n}-card player.</p>` +
+        `<div class="scroll"><table class="data"><thead><tr><th>Banker</th><th class="n">Chance</th><th class="n">You get</th><th class="n">= EV share</th></tr></thead><tbody>`;
+      r.stand.cats.forEach((p, i) => { if (p > 0.00005) st += `<tr><td>${CAT_LABEL[i]}</td><td class="n">${pc1(p)}</td><td class="n">${fmt(r.stand.catPay[i], 0)}</td><td class="n">${fmt(p * r.stand.catPay[i], 3)}</td></tr>`; });
+      st += `</tbody><tfoot><tr><td colspan="3">EV of standing</td><td class="n">${fmt(r.stand.ev, 3)}</td></tr></tfoot></table></div></div>`;
+      let hi = '';
+      if (r.hit) {
+        hi = `<div class="box"><h3>If you hit: your next card</h3><p class="small">Then you keep following the chart. Tap a new hand to see its own working.</p>` +
+          `<div class="scroll"><table class="data"><thead><tr><th>Card</th><th class="n">Left</th><th class="n">Chance</th><th>New hand</th><th>Then</th><th class="n">Worth</th><th class="n">= EV share</th></tr></thead><tbody>`;
+        for (const x of r.hit.rows) {
+          hi += `<tr><td>${chips([x.rank])}</td><td class="n">${x.left} of ${x.rem}</td><td class="n" title="${x.left} ÷ ${x.rem} = ${pc1(x.left / x.rem)} before adjusting for the banker's cards">${pc1(x.prob)}</td>` +
+            `<td><button type="button" class="drill" data-child="${x.child.join(' ')}">${chips(x.child)}</button></td><td>${thenLabel(x)}</td><td class="n">${fmt(x.ev, 3)}</td><td class="n">${fmt(x.prob * x.ev, 3)}</td></tr>`;
+        }
+        hi += `</tbody><tfoot><tr><td colspan="6">EV of hitting</td><td class="n">${fmt(r.hit.ev, 3)}</td></tr></tfoot></table></div>` +
+          '<p class="small">"Chance" is cards left ÷ cards unseen, nudged slightly because you already know the banker\'s two cards are not Ban-Ban or Ban-Luck. That makes Aces and tens a little more likely to still be in the deck.</p></div>';
+      }
+      const mc = M.mc && M.mc.key === ckey(ranks) ? M.mc : null;
+      const mcLine = !mc ? '' : (() => {
+        const ci = (x) => `${fmt(x.mean, 3)} ± ${(1.96 * x.se).toFixed(3)}`;
+        const done = mc.done >= mc.n;
+        return `<span class="small">${mc.done.toLocaleString()} deals · stand ${ci(mc.stand)}${mc.hit ? ` · hit ${ci(mc.hit)} · hit − stand ${ci(mc.diff)}` : ''} (95% ranges)` +
+          (done ? `. Exact: stand ${fmt(r.stand.ev, 3)}${r.hit ? `, hit ${fmt(r.hit.ev, 3)}, difference ${fmt(r.hit.ev - r.stand.ev, 3)}` : ''}.` : '…') + '</span>';
+      })();
+      box.innerHTML = `<div class="box"><div class="crumbs">${crumbs}<span>= ${esc(handDesc(r.eval))}</span></div>${check}` +
+        `<div class="math-grid hand">${st}${hi}</div>` +
+        `<div class="verify"><button type="button" class="btn ghost" id="math-mc"${mc && mc.done < mc.n ? ' disabled' : ''}>Deal this hand 200,000 times</button>${mcLine}</div>` +
+        '<p class="small">The simulation deals the rest of a real shuffled deck to the banker and plays both charts out, as an independent check on the exact numbers above.</p></div>';
+      $$('#math-hand .crumbs button').forEach((b) => b.addEventListener('click', () => { M.path = M.path.slice(0, +b.dataset.i + 1); M.mc = null; renderMathHand(); }));
+      $$('#math-hand button.drill').forEach((b) => b.addEventListener('click', () => { M.path = M.path.concat([parseHand(b.dataset.child)]); M.mc = null; renderMathHand(); }));
+      $('#math-mc').addEventListener('click', () => {
+        M.mc = { key: ckey(ranks), done: 0, n: 200000, stand: { mean: 0, se: 0 } };
+        renderMathHand();
+        mathCall({ type: 'mc', ranks, n: 200000, seed: (Math.random() * 2 ** 31) | 0 }, (d) => {
+          if (!M.mc || M.mc.key !== ckey(ranks)) return;
+          Object.assign(M.mc, d);
+          renderMathHand();
+        });
+      });
+    });
+  }
+
+  // ---------------- why tab: same total, different value ----------------
+  function renderWhySame() {
+    const el = $('#same-table');
+    if (!el) return;
+    const w = V().why, pure = playerChart();
+    const rowsK = ['2|16|h', '3|16|h', '4|16|h', '2|17|h', '3|17|h', '4|17|h'];
+    let h = '<thead><tr><th>Hand</th><th class="n">Stand EV</th><th class="n">Banker busts</th><th class="n">Banker stops on 16</th><th class="n">Hit EV</th><th class="n">You bust on the hit</th><th class="n">Safe next cards</th><th>Chart</th></tr></thead><tbody>';
+    for (const k of rowsK) {
+      const x = w[k], [n, t] = k.split('|'), hb = x.hit > x.stand;
+      h += `<tr><td>${n}-card hard ${t}</td><td class="n${hb ? '' : ' better'}">${fmt(x.stand, 3)}</td><td class="n">${pc1(x.bankerBust)}</td><td class="n">${pc1(x.banker16)}</td>` +
+        `<td class="n${hb ? ' better' : ''}">${fmt(x.hit, 3)}</td><td class="n">${pc1(x.bust)}</td><td class="n">${x.safe.toFixed(1)}</td><td>${pure[k] === 1 ? 'Hit' : 'Stand'}</td></tr>`;
+    }
+    el.innerHTML = h + '</tbody>';
+    $$('[data-why]').forEach((s) => {
+      const [k, f, vid] = s.dataset.why.split(':'), x = D.variants[vid || S.variant].why[k];
+      s.textContent = f === 'safe' ? x.safe.toFixed(1) : ['stand', 'hit'].includes(f) ? fmt(x[f], 2) : pc1(x[f]);
+    });
+    const two = w['2|16|h'];
+    $('#eq-16').innerHTML = outcomeTable([{ label: 'Stand', pay: two.standPay, ev: two.stand, best: two.stand >= two.hit }, { label: 'Hit', pay: two.hitPay, ev: two.hit, best: two.hit > two.stand }]);
+    const a = D.variants.bust1.why['4|17|h'], b = D.variants.bust2.why['4|17|h'];
+    $('#eq-17').innerHTML = outcomeTable([{ label: 'Stand', pay: b.standPay, ev: b.stand }, { label: 'Hit, 1× bust', pay: a.hitPay, ev: a.hit, best: a.hit > a.stand }, { label: 'Hit, 2× bust', pay: b.hitPay, ev: b.hit }]);
+  }
+
   // ---------------- dynamic numbers in rules / why ----------------
   function renderNumbers() {
     const v = V();
@@ -2082,6 +2642,9 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
     renderDumbbell();
     renderEvBars();
     renderNumbers();
+    renderWhySame();
+    M.mc = null;
+    renderMath();
   }
 
   hydrateHands(); hydrateDragons();
@@ -2089,6 +2652,9 @@ window.CORE_SRC = "/*\n * Banluck core engine: rules, hand evaluation, settlemen
   $('#mc-run').addEventListener('click', runMc);
   $('#mc-stop').addEventListener('click', () => { stopMc(); $('#mc-status').textContent = 'Stopped.'; });
   $('#mc-strategy').addEventListener('change', refreshMcLabels);
+  $$('[data-open]').forEach((b) => b.addEventListener('click', () => { showTab('chart'); openMath(b.dataset.open, true); }));
+  $('#strat').addEventListener('click', (e) => { const c = e.target.closest('.cell[data-key]'); if (c) openMath(c.dataset.key, true); });
+  $('#strat').addEventListener('keydown', (e) => { const c = e.target.closest('.cell[data-key]'); if (c && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openMath(c.dataset.key, true); } });
   renderOffline();
   refreshAll();
   renderStats();

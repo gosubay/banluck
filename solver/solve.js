@@ -519,8 +519,17 @@ function solveVariant(fiveCardBustMult) {
   return result;
 }
 
-const out = { generated: new Date().toISOString(), compositions: NC, variants: {} };
-for (const m of [1, 2]) out.variants['bust' + m] = solveVariant(m);
-fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
-console.log('\nwrote', OUT);
+if (require.main === module) {
+  const out = { generated: new Date().toISOString(), compositions: NC, variants: {} };
+  for (const m of [1, 2]) out.variants['bust' + m] = solveVariant(m);
+  fs.mkdirSync(path.dirname(OUT), { recursive: true });
+  fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
+  console.log('\nwrote', OUT);
+}
+
+// Exposed for solver/explain.js.
+module.exports = {
+  NC, SIZE, CNTS, KEY, SPEC, D2NS, bySize, cardsOf, comps, feasible, pcomp2,
+  buildTables, playerPass, playerReach, allDealerPasses, evaluatePair, isPDecision,
+  sigmaFromPlayerChart, sigmaFromDealerChart,
+};

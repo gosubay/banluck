@@ -190,6 +190,47 @@
     </div>
   </div>
 
+  <!-- Same total, different value -->
+  <div class="section">
+    <div class="sec-head">
+      <span class="eyebrow">Same total, different value</span>
+      <h3>Why a 16 on two cards isn't a 16 on four</h3>
+      <p class="small">The chart gives the same total a different EV depending on how many cards you hold. Two things cause it: the banker reads your card count, and your own cards change what's left in the deck. Exact numbers for the rule chosen at the top:</p>
+    </div>
+    <div class="scroll"><table class="data" id="same-table"></table></div>
+    <div class="same-grid">
+      <div class="box">
+        <h4>1 · The banker reads your card count</h4>
+        <p>Look at the stand side. Against two cards the banker busts <b data-why="2|16|h:bankerBust">–</b> and never stops on 16, because your hand could be a 20. Against four cards he busts only <b data-why="4|16|h:bankerBust">–</b> and stops on 16 <b data-why="4|16|h:banker16">–</b> of the time, because half of four-card players have already busted.</p>
+        <p>His 16 only ties your 16 but loses to your 17. So more cards make a standing 16 <em>worse</em> and a standing 17 <em>better</em>.</p>
+      </div>
+      <div class="box">
+        <h4>2 · Card removal</h4>
+        <p>Look at the hit side. Only an Ace to 5 saves a 16. A two-card 16 like 10-6 leaves all 20 of them in the deck. A three-card 16 like 2-4-10 has used two of them up: on average <b data-why="3|16|h:safe">–</b> are left, and <b data-why="4|16|h:safe">–</b> for four cards.</p>
+        <p>So your bust chance on the hit climbs from <b data-why="2|16|h:bust">–</b> to <b data-why="3|16|h:bust">–</b> to <b data-why="4|16|h:bust">–</b>.</p>
+      </div>
+      <div class="box">
+        <h4>3 · Where the hit leads</h4>
+        <p>From four cards, every card that doesn't bust you makes <span class="cjk">五龙</span>, paid 2× or 3×. That is why hitting a four-card 16 (<b data-why="4|16|h:hit">–</b>) beats hitting a three-card 16 (<b data-why="3|16|h:hit">–</b>), even though you bust more often.</p>
+        <p class="small">Within one cell the exact cards matter too. Tap a cell on the Strategy chart tab to see every hand in it.</p>
+      </div>
+    </div>
+    <div class="eqcards">
+      <div class="box">
+        <h4>Close call: two-card hard 16</h4>
+        <p class="small">Standing wins only when the banker busts. Hitting wins more often but busts you 60% of the time, and a third of those busts are saved by a banker bust. The two sums land almost on top of each other.</p>
+        <div id="eq-16"></div>
+        <button type="button" class="btn ghost" data-open="2|16|h">See every hand and next card</button>
+      </div>
+      <div class="box">
+        <h4>Four-card hard 17: the bust rule decides it</h4>
+        <p class="small">Hit, and about 28% of cards (Ace to 4) make <span class="cjk">五龙</span>, paid 2× or 3×. Everything else busts you. With a 1× bust the wins outweigh the losses; with a 2× bust the same busts cost double and standing wins.</p>
+        <div id="eq-17"></div>
+        <button type="button" class="btn ghost" data-open="4|17|h">See every hand and next card</button>
+      </div>
+    </div>
+  </div>
+
   <!-- The banker -->
   <div class="section">
     <div class="sec-head">
@@ -236,6 +277,7 @@
     <summary>How these numbers were made</summary>
     <div class="prose">
       <p><b>Exact solve.</b> All 2,983 possible hands of two to five cards from one deck were enumerated with exact card-removal odds. Your best play depends on how the banker plays and his depends on yours, so it is a two-player game, solved with CFR+ until neither side could gain more than 0.002% per hand by changing strategy. That is the same idea as solving poker: both sides are assumed to play perfectly.</p>
+      <p><b>Check it yourself.</b> Tap any cell on the Strategy chart tab. Your browser recomputes that cell from scratch with a separate program that walks every next card and every way the banker can play, shows the solver's numbers next to its own, and can deal the hand 200,000 times as a third check. The hit side is plain arithmetic: each next card's chance times what the new hand is worth.</p>
       <p><b>Monte Carlo check.</b> 20 million shuffled hands per matchup landed within about two standard errors of the exact values every time. The bust chances and outcome splits on this page come from 3 to 6 million simulated hands each. Run your own on the Play tab.</p>
       <p><b>Why it's fast.</b> Poker and liar's dice need CFR over millions or billions of situations. Banluck is the same kind of game, but the banker only ever sees your card count, so it is small enough to solve in about two and a half minutes.</p>
     </div>

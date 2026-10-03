@@ -27,6 +27,7 @@ The player's chart for the 2× variant fits in one line: stand on **two-card har
 
 ```sh
 node solver/solve.js        # exact single-deck solve + CFR+  -> data/solution.json (~5 min)
+node solver/explain.js      # per-hand EVs for every cell    -> data/explain.json
 node solver/montecarlo.js   # 20M-hand Monte Carlo check     -> data/montecarlo.json (~30 s on 4 cores)
 node build.js               # inline everything             -> index.html, dist/artifact.html
 ```
@@ -35,5 +36,7 @@ node build.js               # inline everything             -> index.html, dist/
 
 - `js/core.js`: rules engine, hand evaluation, settlement, dealing and simulation (shared by Node and the browser).
 - `solver/solve.js`: exact solver. Enumerates all 2,983 hand compositions with exact card-removal odds. The game is solved by CFR+ to < 0.002% exploitability. The solver also computes a reference banker who always stands on 16+; those numbers stay in `data/solution.json` but are not shown on the site.
+- `solver/explain.js`: lists every hand in every chart cell with its weight and exact stand/hit EVs, for the page's "show the math" panel.
+- `js/exact.js`: an independent exact calculator (direct enumeration of every next card and every banker play) that the page runs in a worker to rebuild any cell from scratch, show the chance of each outcome and the EV sum, and check the result against the solver. It agrees with the solver on all 340 hands to within 1e-6.
 - `solver/montecarlo.js`: multi-threaded Monte Carlo verification of the solved charts against the solved banker.
 - `web/`: page template, app logic, and the Rules, Why-it-works and Settings copy (`rules.html`, `why.html`, `settings.html`); `build.js` assembles `index.html`.

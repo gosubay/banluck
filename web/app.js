@@ -523,7 +523,7 @@
     const label = mixed ? (H ? 'Hit*' : 'Stand*') : H ? 'Hit' : 'Stand';
     const hb = info.hitEV >= info.standEV;
     const evs = `<span class="evs"><span${hb ? ' class="b"' : ''}>H ${fmt(info.hitEV, 2)}</span><span${hb ? '' : ' class="b"'}>S ${fmt(info.standEV, 2)}</span></span>`;
-    return `<td><div class="cell ${H ? 'H' : 'S'}${strong ? ' strong' : ''}${mixed ? ' mixed' : ''}" title="${esc(title)}">${label}${evs}</div></td>`;
+    return `<td><div class="cell ${H ? 'H' : 'S'}${strong ? ' strong' : ''}${mixed ? ' mixed' : ''}${M.key === `${n}|${t}|${s}` ? ' sel' : ''}" data-key="${n}|${t}|${s}" role="button" tabindex="0" title="${esc(title + ' Tap for the math.')}">${label}${evs}</div></td>`;
   }
   function renderChart() {
     const v = V(), info = chartInfo(), pure = playerChart();
@@ -701,6 +701,301 @@
     });
   }
 
+  // ---------------- show the math ----------------
+  // Every chart cell can be opened to show the chance of each outcome, the EV sum,
+  // and every hand in the cell. The numbers are recomputed in a worker by
+  // js/exact.js (direct enumeration) and checked against the solver's values.
+  const PAYOFFS = [-7, -3, -2, -1, 0, 1, 2, 3, 7];
+  const PAY_LABEL = { 7: 'Win 7× (777)', 3: 'Win 3×', 2: 'Win 2×', 1: 'Win 1×', 0: 'Push', '-1': 'Lose 1×', '-2': 'Lose 2×', '-3': 'Lose 3×', '-7': 'Lose 7×' };
+  const CAT_LABEL = ['Busts', 'Stops on 16', 'Ends on 17', 'Ends on 18', 'Ends on 19', 'Ends on 20', 'Ends on 21', 'Makes 五龙', 'Makes 五龙 21', 'Makes 777'];
+  const RANK = (r) => (r === 1 ? 'A' : String(r));
+  const chips = (ranks) => `<span class="rks">${ranks.map((r) => `<span class="rk">${RANK(r)}</span>`).join('')}</span>`;
+  const pc1 = (p) => (p * 100).toFixed(1) + '%';
+  const parseHand = (s) => s.split(' ').map(Number);
+  const M = { key: '2|16|h', path: null, showAll: false, cache: new Map(), pending: new Map(), req: 0, mc: null };
+  const MATH_SRC = `${window.CORE_SRC}
+${window.EXACT_SRC}
+  var engines = {};
+  function engine(m) { return engines[m.vid] || (engines[m.vid] = self.BanluckExact.create(m.rules, m.pchart, m.bchart)); }
+  function slim(E, ranks) {
+    var X = self.BanluckExact, r = E.explain(X.fromRanks(ranks)), e = r.eval;
+    return {
+      ranks: ranks,
+      eval: { n: e.n, total: e.total, soft: e.soft, bust: e.bust, tier: e.tier, terminal: e.terminal },
+      stand: { cats: Array.from(r.stand.cats), catPay: r.stand.catPay, payoff: Array.from(r.stand.payoff), ev: r.stand.ev },
+      hit: r.hit && { payoff: Array.from(r.hit.payoff), ev: r.hit.ev, rows: r.hit.rows.map(function (x) {
+        return { rank: x.rank, left: x.left, rem: x.rem, prob: x.prob, child: X.cardsOf(x.child), n: x.eval.n, total: x.eval.total, bust: x.eval.bust, tier: x.eval.tier, terminal: x.eval.terminal, hits: x.hits, ev: x.ev };
+      }) },
+    };
+  }
+  function simulate(m) {
+    var C = self.BanluckCore, rules = m.rules, pp = C.chartPolicy(m.pchart), dp = C.dealerChartPolicy(m.bchart), rand = C.rng(m.seed);
+    var deck = [], r, k;
+    for (r = 1; r <= 10; r++) for (k = 0; k < (r === 10 ? 16 : 4); k++) deck.push(r);
+    m.ranks.forEach(function (c) { deck.splice(deck.indexOf(c), 1); });
+    var hand = m.ranks, pe0 = C.evaluate(hand, rules), canHit = !pe0.terminal;
+    var S = 0, S2 = 0, H = 0, H2 = 0, D = 0, D2 = 0, i = 0, n = m.n;
+    function bank(d, idx, np, pe) {
+      var dl = d.slice(), de = C.evaluate(dl, rules);
+      while (!de.terminal) {
+        if (de.total >= rules.dealerMinStand) { var q = dp(dl, np); if (!(q >= 1 || (q > 0 && rand() < q))) break; }
+        dl.push(deck[idx++]); de = C.evaluate(dl, rules);
+      }
+      return C.settle(pe, de, rules);
+    }
+    function stats(s, s2) { var mean = s / i; return { mean: mean, se: Math.sqrt(Math.max(0, s2 / i - mean * mean) / i) }; }
+    function step() {
+      var end = Math.min(n, i + 25000);
+      for (; i < end; i++) {
+        var d;
+        // fresh banker cards each time; Ban-Ban / Ban-Luck would already be settled, so redeal those
+        do {
+          for (var j = 0; j < 9; j++) { var x = j + Math.floor(rand() * (deck.length - j)), t = deck[j]; deck[j] = deck[x]; deck[x] = t; }
+          d = [deck[0], deck[1]];
+        } while (C.special2(d));
+        var rs = bank(d, 2, hand.length, pe0);
+        S += rs; S2 += rs * rs;
+        if (canHit) {
+          var p = hand.concat([deck[2]]), idx = 3, pe = C.evaluate(p, rules);
+          while (!pe.terminal && (pe.total < rules.playerMinStand || pp(p) >= 1)) { p.push(deck[idx++]); pe = C.evaluate(p, rules); }
+          var rh = bank(d, idx, p.length, pe);
+          H += rh; H2 += rh * rh; D += rh - rs; D2 += (rh - rs) * (rh - rs);
+        }
+      }
+      postMessage({ id: m.id, done: i, n: n, stand: stats(S, S2), hit: canHit ? stats(H, H2) : null, diff: canHit ? stats(D, D2) : null });
+      if (i < n) setTimeout(step, 0);
+    }
+    step();
+  }
+  onmessage = function (e) {
+    var m = e.data;
+    if (m.type === 'explain') { var E = engine(m); postMessage({ id: m.id, out: m.hands.map(function (h) { return slim(E, h); }) }); }
+    else if (m.type === 'mc') simulate(m);
+  };`;
+  let mathWorker = null, mathUrl = null;
+  function mathCall(msg, cb) {
+    if (!mathWorker) {
+      try {
+        mathUrl = mathUrl || URL.createObjectURL(new Blob([MATH_SRC], { type: 'text/javascript' }));
+        mathWorker = new Worker(mathUrl);
+        mathWorker.onmessage = (e) => { const f = M.pending.get(e.data.id); if (f) f(e.data); };
+      } catch (err) { mathWorker = null; return false; }
+    }
+    const id = ++M.req;
+    M.pending.set(id, cb);
+    mathWorker.postMessage(Object.assign({ id, vid: S.variant, rules: rules(), pchart: playerChart(), bchart: V().bankerChart }, msg));
+    return id;
+  }
+  const ckey = (ranks) => S.variant + '|' + ranks.join(',');
+  // Run cb once every hand is computed (cached per rule variant).
+  function withHands(list, cb) {
+    const missing = list.filter((r) => !M.cache.has(ckey(r)));
+    if (!missing.length) { cb(list.map((r) => M.cache.get(ckey(r)))); return; }
+    const vid = S.variant;
+    const ok = mathCall({ type: 'explain', hands: missing }, (d) => {
+      d.out.forEach((x) => M.cache.set(vid + '|' + x.ranks.join(','), x));
+      if (vid === S.variant) withHands(list, cb);
+    });
+    if (ok === false) $('#math-body').innerHTML = '<p class="small">This browser blocked background workers, so the math panel cannot run here.</p>';
+  }
+
+  // Outcome table for one or more columns of payoff distributions, with the EV sum under it.
+  function outcomeTable(cols) {
+    const live = PAYOFFS.map((x, i) => i).filter((i) => cols.some((c) => c.pay[i] > 0.00005)).reverse();
+    let h = `<div class="scroll"><table class="data"><thead><tr><th>Outcome</th>${cols.map((c) => `<th class="n">${c.label}</th>`).join('')}</tr></thead><tbody>`;
+    for (const i of live) h += `<tr><td>${PAY_LABEL[PAYOFFS[i]]}</td>${cols.map((c) => `<td class="n">${pc1(c.pay[i])}</td>`).join('')}</tr>`;
+    h += `</tbody><tfoot><tr><td>EV per unit bet</td>${cols.map((c) => `<td class="n${c.best ? ' better' : ''}">${fmt(c.ev, 3)}</td>`).join('')}</tr></tfoot></table></div>`;
+    for (const c of cols) {
+      const terms = live.filter((i) => c.pay[i] > 0.00005).map((i) => `${PAYOFFS[i] > 0 ? '+' : PAYOFFS[i] < 0 ? '−' : ''}${Math.abs(PAYOFFS[i])} × ${pc1(c.pay[i])}`);
+      h += `<p class="eq">${esc(c.label)}: ${terms.join('  ')}  = <b>${fmt(c.ev, 3)}</b></p>`;
+    }
+    return h;
+  }
+
+  function mathFacts(results, list) {
+    const a = { stand: new Array(9).fill(0), hit: new Array(9).fill(0), sEV: 0, hEV: 0, bb: 0, b16: 0, bust: 0, safe: 0, win: 0 };
+    results.forEach((r, j) => {
+      const w = list[j][1];
+      a.sEV += w * r.stand.ev; a.bb += w * r.stand.cats[0]; a.b16 += w * r.stand.cats[1];
+      for (let i = 0; i < 9; i++) a.stand[i] += w * r.stand.payoff[i];
+      if (r.hit) {
+        a.hEV += w * r.hit.ev;
+        for (let i = 0; i < 9; i++) a.hit[i] += w * r.hit.payoff[i];
+        for (const x of r.hit.rows) { if (x.bust) a.bust += w * x.prob; else a.safe += w * x.left; }
+      }
+    });
+    a.win = a.hit[5] + a.hit[6] + a.hit[7] + a.hit[8];
+    return a;
+  }
+
+  // Plain-English reasons for a cell, built from its own numbers.
+  function mathWhy(key, a, info) {
+    const [n, t, s] = key.split('|').map((x, i) => (i < 2 ? +x : x));
+    const out = [];
+    const d = a.hEV - a.sEV, unseen = 52 - n;
+    out.push(Math.abs(d) < 0.005 ? `Hitting and standing are within ${Math.abs(d).toFixed(3)} units of each other: a dead heat.`
+      : `${d > 0 ? 'Hitting' : 'Standing'} is better by ${Math.abs(d).toFixed(3)} units per hand.`);
+    if (s === 'h') {
+      out.push(`<b>If you stand</b>, the banker busts ${pc1(a.bb)} of the time against a ${n}-card hand` +
+        (a.b16 > 0.005 ? ` and stops on 16 another ${pc1(a.b16)}` : '') + '. ' +
+        (t === 16 ? 'A standing 16 only wins when he busts: any banker total of 16 or more ties or beats it.'
+          : `You win when he busts or stops below ${t}.`) +
+        (n === 2 ? ' Against two cards he can\'t tell your hand from a 20, so he keeps drawing.' : n === 3 ? ' Once you\'ve drawn, he expects 17 or better and plays accordingly.' : ' Half of four-card players have silently busted, so he often settles for 16 and opens them.'));
+      const base = 4 * (21 - t);
+      out.push(`<b>If you hit</b>, ${pc1(a.bust)} of the cards bust you: on average only ${a.safe.toFixed(1)} of the ${unseen} unseen cards keep you alive` +
+        (n > 2 && t >= 12 ? ` (a two-card ${t} has ${base}). That is card removal: the small cards that built your hand are no longer in the deck.` : '.') +
+        (n === 4 ? ` But every card that doesn't bust you makes 五龙, paid 2× (3× on 21), so ${pc1(a.win)} of hits win.` : '') +
+        (n === 4 && S.variant === 'bust2' ? ' A bust on the fifth card costs you 2×.' : ''));
+    } else if (n === 2) {
+      out.push('<b>The third card can\'t bust you.</b> The Ace drops from 11 to 10 or 1 to absorb it, so a hit is a free look at a better hand and a step towards 五龙.');
+    } else {
+      out.push('<b>The fourth card can\'t bust you.</b> The Ace drops from 10 to 1, so you land on (total − 9) plus the new card. From there you are one card from 五龙.');
+    }
+    if (info.hit > 0.1 && info.hit < 0.9) out.push(`The solver mixes here, hitting about ${Math.round(info.hit * 100)}% of the time, so the banker can't read you. Either choice costs almost nothing.`);
+    if (key === '4|17|h') out.push(S.variant === 'bust2' ? 'With the 1× rule a five-card bust costs only 1, and hitting becomes the better play.' : 'With the 2× rule a five-card bust costs 2, and standing becomes the better play.');
+    return out.map((x) => `<p>${x}</p>`).join('');
+  }
+
+  function openMath(key, scroll) {
+    M.key = key; M.path = null; M.showAll = false; M.mc = null;
+    $$('#strat .cell.sel').forEach((c) => c.classList.remove('sel'));
+    const cell = $(`#strat .cell[data-key="${key}"]`);
+    if (cell) cell.classList.add('sel');
+    renderMath();
+    if (scroll) $('#math').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function renderMath() {
+    const v = V(), key = M.key, list = v.hands[key], info = v.chart[key];
+    if (!list) return;
+    const body = $('#math-body');
+    const hitIt = playerChart()[key] === 1, mixed = info.hit > 0.1 && info.hit < 0.9;
+    const head = `<div class="math-head"><h3>${esc(evTitle(key))}</h3><span class="pill ${hitIt ? 'hit' : 'stand'}">${hitIt ? 'Hit' : 'Stand'}</span>` +
+      `<span class="evs">Hit ${fmt(info.hitEV)} · Stand ${fmt(info.standEV)} · ${bustLabel()}</span></div>`;
+    body.innerHTML = head + '<p class="small">Working it out…</p>';
+    withHands(list.map((x) => parseHand(x[0])), (results) => {
+      if (M.key !== key) return;
+      const a = mathFacts(results, list), hb = a.hEV > a.sEV;
+      const many = list.length > 12 && !M.showAll;
+      const rows = (many ? list.slice(0, 12) : list).map((x, j) => {
+        const r = results[j];
+        let safe = 0; for (const y of r.hit.rows) if (!y.bust) safe += y.left;
+        const sel = M.path && M.path.length === 1 && M.path[0].join(' ') === x[0];
+        return `<tr class="pick${sel ? ' on' : ''}" data-hand="${x[0]}" tabindex="0"><td>${chips(r.ranks)}</td><td class="n">${pc1(x[1])}</td><td class="n">${safe} of ${52 - r.ranks.length}</td>` +
+          `<td class="n${r.stand.ev >= r.hit.ev ? ' better' : ''}">${fmt(r.stand.ev, 3)}</td><td class="n${r.hit.ev > r.stand.ev ? ' better' : ''}">${fmt(r.hit.ev, 3)}</td></tr>`;
+      }).join('');
+      body.innerHTML = head +
+        `<div class="math-why">${mathWhy(key, a, info)}</div>` +
+        `<div class="math-grid">` +
+        `<div class="box"><h3>Chance of each outcome</h3><p class="small">All hands in this cell, weighted by how often you hold them. EV is the sum of each result times its chance.</p>` +
+        outcomeTable([{ label: 'Stand', pay: a.stand, ev: a.sEV, best: !hb }, { label: 'Hit', pay: a.hit, ev: a.hEV, best: hb }]) + '</div>' +
+        `<div class="box"><h3>The hands in this cell</h3><p class="small">Same total, different cards. Which cards you hold changes what is left in the deck (card removal), so each hand has its own EVs. Tap one for its full working.</p>` +
+        `<div class="scroll"><table class="data"><thead><tr><th>Hand</th><th class="n">How often</th><th class="n">Safe next cards</th><th class="n">Stand</th><th class="n">Hit</th></tr></thead><tbody>${rows}</tbody></table></div>` +
+        (many ? `<button type="button" class="btn ghost" id="math-all">Show all ${list.length} hands</button>` : '') + '</div>' +
+        `</div><div id="math-hand"></div>`;
+      $$('#math-body tr.pick').forEach((tr) => {
+        const go = () => { M.path = [parseHand(tr.dataset.hand)]; M.mc = null; renderMath(); $('#math-hand').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+        tr.addEventListener('click', go);
+        tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+      });
+      const all = $('#math-all');
+      if (all) all.addEventListener('click', () => { M.showAll = true; renderMath(); });
+      if (!M.path) M.path = [parseHand(list[0][0])];
+      renderMathHand();
+    });
+  }
+
+  function handDesc(e) {
+    if (e.bust) return `${e.n === 5 ? 'five-card ' : ''}bust (${e.total})`;
+    if (e.tier === 3) return '777';
+    if (e.n === 5) return e.total === 21 ? '五龙 21' : '五龙';
+    return `${e.soft ? 'Ace-high ' : ''}${e.total}`;
+  }
+  function thenLabel(x) {
+    if (x.bust) return x.n === 5 ? 'Five-card bust' : 'Bust';
+    if (x.tier === 3) return '777';
+    if (x.n === 5) return x.total === 21 ? '五龙 21' : '五龙';
+    if (x.total < rules().playerMinStand) return 'Must hit';
+    return x.hits >= 0.5 ? 'Hit (chart)' : 'Stand';
+  }
+  function renderMathHand() {
+    const box = $('#math-hand');
+    if (!box || !M.path) return;
+    const ranks = M.path[M.path.length - 1];
+    withHands([ranks], ([r]) => {
+      if (!M.path || M.path[M.path.length - 1] !== ranks) return;
+      const crumbs = M.path.map((p, i) => (i === M.path.length - 1 ? `<span>${chips(p)}</span>` : `<button type="button" data-i="${i}">${chips(p)}</button><span aria-hidden="true">→</span>`)).join('');
+      const top = M.path.length === 1 ? (V().hands[M.key] || []).find((x) => x[0] === ranks.join(' ')) : null;
+      let check = '';
+      if (top) {
+        const ok = Math.abs(top[2] - r.stand.ev) < 1e-4 && Math.abs(top[3] - r.hit.ev) < 1e-4;
+        check = `<div class="check"><span>Solver: stand <span class="mono">${fmt(top[2], 4)}</span>, hit <span class="mono">${fmt(top[3], 4)}</span></span>` +
+          `<span>Recomputed in your browser: stand <span class="mono">${fmt(r.stand.ev, 4)}</span>, hit <span class="mono">${fmt(r.hit.ev, 4)}</span></span>` +
+          `<span class="${ok ? 'ok' : 'bad'}">${ok ? '✓ match' : '✗ mismatch'}</span></div>`;
+      }
+      let st = `<div class="box"><h3>${r.hit ? 'If you stand' : 'Your hand is finished'}: how the banker finishes</h3>` +
+        `<p class="small">He plays the banker's chart against a ${r.eval.n}-card player.</p>` +
+        `<div class="scroll"><table class="data"><thead><tr><th>Banker</th><th class="n">Chance</th><th class="n">You get</th><th class="n">= EV share</th></tr></thead><tbody>`;
+      r.stand.cats.forEach((p, i) => { if (p > 0.00005) st += `<tr><td>${CAT_LABEL[i]}</td><td class="n">${pc1(p)}</td><td class="n">${fmt(r.stand.catPay[i], 0)}</td><td class="n">${fmt(p * r.stand.catPay[i], 3)}</td></tr>`; });
+      st += `</tbody><tfoot><tr><td colspan="3">EV of standing</td><td class="n">${fmt(r.stand.ev, 3)}</td></tr></tfoot></table></div></div>`;
+      let hi = '';
+      if (r.hit) {
+        hi = `<div class="box"><h3>If you hit: your next card</h3><p class="small">Then you keep following the chart. Tap a new hand to see its own working.</p>` +
+          `<div class="scroll"><table class="data"><thead><tr><th>Card</th><th class="n">Left</th><th class="n">Chance</th><th>New hand</th><th>Then</th><th class="n">Worth</th><th class="n">= EV share</th></tr></thead><tbody>`;
+        for (const x of r.hit.rows) {
+          hi += `<tr><td>${chips([x.rank])}</td><td class="n">${x.left} of ${x.rem}</td><td class="n" title="${x.left} ÷ ${x.rem} = ${pc1(x.left / x.rem)} before adjusting for the banker's cards">${pc1(x.prob)}</td>` +
+            `<td><button type="button" class="drill" data-child="${x.child.join(' ')}">${chips(x.child)}</button></td><td>${thenLabel(x)}</td><td class="n">${fmt(x.ev, 3)}</td><td class="n">${fmt(x.prob * x.ev, 3)}</td></tr>`;
+        }
+        hi += `</tbody><tfoot><tr><td colspan="6">EV of hitting</td><td class="n">${fmt(r.hit.ev, 3)}</td></tr></tfoot></table></div>` +
+          '<p class="small">"Chance" is cards left ÷ cards unseen, nudged slightly because you already know the banker\'s two cards are not Ban-Ban or Ban-Luck. That makes Aces and tens a little more likely to still be in the deck.</p></div>';
+      }
+      const mc = M.mc && M.mc.key === ckey(ranks) ? M.mc : null;
+      const mcLine = !mc ? '' : (() => {
+        const ci = (x) => `${fmt(x.mean, 3)} ± ${(1.96 * x.se).toFixed(3)}`;
+        const done = mc.done >= mc.n;
+        return `<span class="small">${mc.done.toLocaleString()} deals · stand ${ci(mc.stand)}${mc.hit ? ` · hit ${ci(mc.hit)} · hit − stand ${ci(mc.diff)}` : ''} (95% ranges)` +
+          (done ? `. Exact: stand ${fmt(r.stand.ev, 3)}${r.hit ? `, hit ${fmt(r.hit.ev, 3)}, difference ${fmt(r.hit.ev - r.stand.ev, 3)}` : ''}.` : '…') + '</span>';
+      })();
+      box.innerHTML = `<div class="box"><div class="crumbs">${crumbs}<span>= ${esc(handDesc(r.eval))}</span></div>${check}` +
+        `<div class="math-grid hand">${st}${hi}</div>` +
+        `<div class="verify"><button type="button" class="btn ghost" id="math-mc"${mc && mc.done < mc.n ? ' disabled' : ''}>Deal this hand 200,000 times</button>${mcLine}</div>` +
+        '<p class="small">The simulation deals the rest of a real shuffled deck to the banker and plays both charts out, as an independent check on the exact numbers above.</p></div>';
+      $$('#math-hand .crumbs button').forEach((b) => b.addEventListener('click', () => { M.path = M.path.slice(0, +b.dataset.i + 1); M.mc = null; renderMathHand(); }));
+      $$('#math-hand button.drill').forEach((b) => b.addEventListener('click', () => { M.path = M.path.concat([parseHand(b.dataset.child)]); M.mc = null; renderMathHand(); }));
+      $('#math-mc').addEventListener('click', () => {
+        M.mc = { key: ckey(ranks), done: 0, n: 200000, stand: { mean: 0, se: 0 } };
+        renderMathHand();
+        mathCall({ type: 'mc', ranks, n: 200000, seed: (Math.random() * 2 ** 31) | 0 }, (d) => {
+          if (!M.mc || M.mc.key !== ckey(ranks)) return;
+          Object.assign(M.mc, d);
+          renderMathHand();
+        });
+      });
+    });
+  }
+
+  // ---------------- why tab: same total, different value ----------------
+  function renderWhySame() {
+    const el = $('#same-table');
+    if (!el) return;
+    const w = V().why, pure = playerChart();
+    const rowsK = ['2|16|h', '3|16|h', '4|16|h', '2|17|h', '3|17|h', '4|17|h'];
+    let h = '<thead><tr><th>Hand</th><th class="n">Stand EV</th><th class="n">Banker busts</th><th class="n">Banker stops on 16</th><th class="n">Hit EV</th><th class="n">You bust on the hit</th><th class="n">Safe next cards</th><th>Chart</th></tr></thead><tbody>';
+    for (const k of rowsK) {
+      const x = w[k], [n, t] = k.split('|'), hb = x.hit > x.stand;
+      h += `<tr><td>${n}-card hard ${t}</td><td class="n${hb ? '' : ' better'}">${fmt(x.stand, 3)}</td><td class="n">${pc1(x.bankerBust)}</td><td class="n">${pc1(x.banker16)}</td>` +
+        `<td class="n${hb ? ' better' : ''}">${fmt(x.hit, 3)}</td><td class="n">${pc1(x.bust)}</td><td class="n">${x.safe.toFixed(1)}</td><td>${pure[k] === 1 ? 'Hit' : 'Stand'}</td></tr>`;
+    }
+    el.innerHTML = h + '</tbody>';
+    $$('[data-why]').forEach((s) => {
+      const [k, f, vid] = s.dataset.why.split(':'), x = D.variants[vid || S.variant].why[k];
+      s.textContent = f === 'safe' ? x.safe.toFixed(1) : ['stand', 'hit'].includes(f) ? fmt(x[f], 2) : pc1(x[f]);
+    });
+    const two = w['2|16|h'];
+    $('#eq-16').innerHTML = outcomeTable([{ label: 'Stand', pay: two.standPay, ev: two.stand, best: two.stand >= two.hit }, { label: 'Hit', pay: two.hitPay, ev: two.hit, best: two.hit > two.stand }]);
+    const a = D.variants.bust1.why['4|17|h'], b = D.variants.bust2.why['4|17|h'];
+    $('#eq-17').innerHTML = outcomeTable([{ label: 'Stand', pay: b.standPay, ev: b.stand }, { label: 'Hit, 1× bust', pay: a.hitPay, ev: a.hit, best: a.hit > a.stand }, { label: 'Hit, 2× bust', pay: b.hitPay, ev: b.hit }]);
+  }
+
   // ---------------- dynamic numbers in rules / why ----------------
   function renderNumbers() {
     const v = V();
@@ -729,6 +1024,9 @@
     renderDumbbell();
     renderEvBars();
     renderNumbers();
+    renderWhySame();
+    M.mc = null;
+    renderMath();
   }
 
   hydrateHands(); hydrateDragons();
@@ -736,6 +1034,9 @@
   $('#mc-run').addEventListener('click', runMc);
   $('#mc-stop').addEventListener('click', () => { stopMc(); $('#mc-status').textContent = 'Stopped.'; });
   $('#mc-strategy').addEventListener('change', refreshMcLabels);
+  $$('[data-open]').forEach((b) => b.addEventListener('click', () => { showTab('chart'); openMath(b.dataset.open, true); }));
+  $('#strat').addEventListener('click', (e) => { const c = e.target.closest('.cell[data-key]'); if (c) openMath(c.dataset.key, true); });
+  $('#strat').addEventListener('keydown', (e) => { const c = e.target.closest('.cell[data-key]'); if (c && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openMath(c.dataset.key, true); } });
   renderOffline();
   refreshAll();
   renderStats();

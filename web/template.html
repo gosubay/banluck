@@ -413,6 +413,46 @@ table.bank tr.group th { text-align: left; padding-top: 8px; color: var(--ink); 
 table.bank .cell { padding: 5px 2px; font-size: .78rem; }
 table.bank .cell .evs { font-size: .64rem; }
 table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
+
+/* ---- Show the math ---- */
+table.strat .cell[data-key] { cursor: pointer; }
+table.strat .cell[data-key]:hover { filter: brightness(1.06); }
+table.strat .cell.sel { box-shadow: 0 0 0 3px var(--gold); }
+.math { display: grid; gap: 14px; scroll-margin-top: 12px; }
+.math-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; }
+.math-head h3 { font-size: 1.35rem; }
+.math-head .evs { font-family: var(--font-mono); font-size: .9rem; color: var(--muted); }
+.math-why { max-width: 72ch; }
+.math-why p + p { margin-top: 6px; }
+.math-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.math-grid.hand { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+@media (max-width: 960px) { .math-grid, .math-grid.hand { grid-template-columns: 1fr; } }
+.math .box { align-content: start; }
+.eq { font-family: var(--font-mono); font-size: .8rem; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }
+.eq b { color: var(--ink); font-weight: 600; }
+table.data tr.pick { cursor: pointer; }
+table.data tr.pick:hover td { background: color-mix(in srgb, var(--gold) 8%, transparent); }
+table.data tr.on td { background: color-mix(in srgb, var(--gold) 16%, transparent); }
+table.data td.better { font-weight: 700; color: var(--ink); }
+table.data tfoot td { border-bottom: 0; font-weight: 600; }
+.rk { display: inline-block; min-width: 1.7em; padding: 1px 4px; margin: 0 2px 2px 0; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); font-family: var(--font-mono); font-size: .78rem; text-align: center; }
+button.drill { all: unset; cursor: pointer; border-bottom: 1px dotted currentColor; white-space: nowrap; }
+.rks { white-space: nowrap; }
+button.drill:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .85rem; }
+.crumbs button { all: unset; cursor: pointer; color: var(--muted); }
+.crumbs button:hover { color: var(--ink); }
+.check { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: .85rem; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--win) 12%, transparent); }
+.check .ok { color: var(--win); font-weight: 700; }
+.check .bad { color: var(--cinnabar); font-weight: 700; }
+.verify { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.verify .btn { padding: 7px 16px; font-size: .88rem; }
+.th-note { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.same-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .same-grid { grid-template-columns: 1fr; } }
+.same-grid .box p { font-size: .9rem; }
+.eqcards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .eqcards { grid-template-columns: 1fr; } }
 </style>
 
 <header class="top">
@@ -578,6 +618,14 @@ table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
     </div>
   </div>
 
+  <div class="section math" id="math" aria-live="polite">
+    <div class="sec-head chart-sub">
+      <span class="eyebrow">Show the math</span>
+      <p class="small">Tap any cell in your chart to see where its numbers come from: the chance of every outcome, the EV sum, and every hand that lands in the cell. This page recomputes it all from scratch and checks it against the solver.</p>
+    </div>
+    <div id="math-body"></div>
+  </div>
+
   <div class="section bank-sec">
     <div class="sec-head chart-sub">
       <span class="eyebrow">If you hold the bank</span>
@@ -613,5 +661,6 @@ table.bank td.hl .cell { box-shadow: 0 0 0 2px var(--gold); }
 </main>
 
 <script>/*__CORE__*/</script>
+<script>/*__EXACT__*/</script>
 <script>/*__DATA__*/</script>
 <script>/*__APP__*/</script>
